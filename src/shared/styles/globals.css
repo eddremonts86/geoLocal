@@ -1,0 +1,308 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ──────────────────────────────────────────────────────────────────
+ * GeoLocal — "Copenhagen Editorial" design system
+ * Scandinavian editorial aesthetic. Parchment + ink. Burnt amber accent.
+ * OKLCH throughout. Surface elevation via lightness (no decorative shadows).
+ * ────────────────────────────────────────────────────────────────── */
+
+@theme {
+  /* ─── Motion ──────────────────────────────────────────────── */
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-fade-in: fade-in 0.24s var(--ease-out-quart);
+  --animate-fade-out: fade-out 0.16s var(--ease-out-quart);
+  --animate-slide-in-right: slide-in-right 0.28s var(--ease-out-quart);
+  --animate-slide-out-right: slide-out-right 0.18s var(--ease-out-quart);
+  --animate-slide-in-up: slide-in-up 0.28s var(--ease-out-quart);
+  --animate-editorial-in: editorial-in 0.6s var(--ease-out-expo);
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+  @keyframes slide-in-right {
+    from { transform: translateX(24px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes slide-out-right {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(24px); opacity: 0; }
+  }
+  @keyframes slide-in-up {
+    from { transform: translateY(16px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes editorial-in {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ─── Semantic color tokens (Tailwind utility names) ─────── */
+  --color-background: var(--surface-0);
+  --color-foreground: var(--ink-1);
+  --color-surface: var(--surface-1);
+  --color-surface-solid: var(--surface-1);
+  --color-accent: var(--amber);
+  --color-accent-soft: var(--amber-soft);
+  --color-muted: var(--ink-3);
+  --color-border: var(--line-1);
+  --color-border-active: var(--amber);
+  --color-danger: var(--red);
+  --color-success: var(--green);
+
+  --color-card: var(--surface-1);
+  --color-card-foreground: var(--ink-1);
+  --color-popover: var(--surface-2);
+  --color-popover-foreground: var(--ink-1);
+  --color-primary: var(--amber);
+  --color-primary-foreground: var(--surface-0);
+  --color-secondary: var(--surface-2);
+  --color-secondary-foreground: var(--ink-1);
+  --color-destructive: var(--red);
+  --color-destructive-foreground: oklch(0.98 0 0);
+  --color-muted-foreground: var(--ink-3);
+  --color-accent-foreground: var(--ink-1);
+  --color-input: var(--line-1);
+  --color-ring: var(--amber);
+
+  --color-sidebar: var(--surface-1);
+  --color-sidebar-foreground: var(--ink-1);
+  --color-sidebar-primary: var(--amber);
+  --color-sidebar-primary-foreground: var(--surface-0);
+  --color-sidebar-accent: var(--surface-2);
+  --color-sidebar-accent-foreground: var(--ink-1);
+  --color-sidebar-border: var(--line-1);
+  --color-sidebar-ring: var(--amber);
+
+  /* ─── Typography ──────────────────────────────────────────── */
+  /* Fraunces (variable serif) for display — distinctive, editorial */
+  /* Geist (modern sans) for body/UI — crisp, not Inter */
+  /* JetBrains Mono for tabular prices/data */
+  --font-sans: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Fraunces', 'Cormorant Garamond', Georgia, serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+
+  /* Fluid type scale — editorial, strong hierarchy */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: clamp(1.75rem, 1.4rem + 1.5vw, 2.25rem);
+  --text-4xl: clamp(2.25rem, 1.8rem + 2.2vw, 3rem);
+  --text-5xl: clamp(3rem, 2.2rem + 4vw, 4.5rem);
+  --text-6xl: clamp(3.5rem, 2.4rem + 5.5vw, 6rem);
+  --text-display: clamp(3.5rem, 2rem + 7vw, 7.5rem);
+
+  /* ─── Radius (sharper than generic rounded-xl) ───────────── */
+  --radius: 0.25rem;
+  --radius-sm: 0.125rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.375rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.75rem;
+  --radius-full: 9999px;
+
+  /* ─── Shadows — reserved; prefer elevation via lightness ─── */
+  --shadow-card: 0 1px 3px oklch(0.18 0.015 40 / 0.05);
+  --shadow-card-hover: 0 4px 16px oklch(0.18 0.015 40 / 0.08);
+  --shadow-panel: 0 2px 12px oklch(0.18 0.015 40 / 0.06);
+  --shadow-popup: 0 8px 32px oklch(0.18 0.015 40 / 0.12);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+ * LIGHT MODE — parchment, ink, burnt amber
+ * Warm-tinted neutrals (hue 75) for Scandinavian parchment feel
+ * ────────────────────────────────────────────────────────────────── */
+:root {
+  color-scheme: light;
+
+  /* 5-level surface system (lightness-based, warm parchment tint) */
+  --surface-0: oklch(0.975 0.006 75);   /* page canvas — warm parchment */
+  --surface-1: oklch(1 0.004 75);        /* cards, primary containers */
+  --surface-2: oklch(0.97 0.006 75);     /* nested, popovers */
+  --surface-3: oklch(0.945 0.008 75);    /* active, selected */
+  --surface-4: oklch(0.91 0.010 75);     /* deeper recess */
+
+  /* Ink scale — warm-tinted toward brand */
+  --ink-1: oklch(0.18 0.015 45);         /* primary text — deep ink */
+  --ink-2: oklch(0.32 0.012 45);         /* secondary text */
+  --ink-3: oklch(0.52 0.010 45);         /* muted text */
+  --ink-4: oklch(0.72 0.006 45);         /* disabled, very muted */
+
+  /* Lines */
+  --line-1: oklch(0.90 0.008 60);        /* default border */
+  --line-2: oklch(0.82 0.012 60);        /* emphasized border */
+
+  /* Brand: burnt amber — warm, editorial, memorable */
+  --amber: oklch(0.62 0.14 55);
+  --amber-hover: oklch(0.57 0.15 52);
+  --amber-soft: oklch(0.93 0.04 65);
+  --amber-ink: oklch(0.38 0.12 48);       /* amber text color for light mode */
+
+  /* Category accents (muted, coherent) */
+  --cat-property: oklch(0.52 0.10 240);   /* muted slate-blue */
+  --cat-vehicle: oklch(0.55 0.10 165);    /* muted teal */
+  --cat-service: oklch(0.62 0.14 55);     /* amber (shared with brand) */
+  --cat-experience: oklch(0.58 0.13 300);  /* violet-purple — unique, experiential */
+
+  --red: oklch(0.55 0.19 25);
+  --green: oklch(0.55 0.14 155);
+  --yellow: oklch(0.78 0.14 80);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+ * DARK MODE — deep ink, surface elevation via lightness
+ * Warm-tinted (not blue-gray), amber desaturated 20%
+ * ────────────────────────────────────────────────────────────────── */
+.dark {
+  color-scheme: dark;
+
+  /* 5-level surface elevation — 3-4% lightness steps */
+  --surface-0: oklch(0.14 0.008 50);      /* page canvas — never pure black */
+  --surface-1: oklch(0.18 0.010 50);      /* cards */
+  --surface-2: oklch(0.22 0.012 50);      /* elevated, drawers */
+  --surface-3: oklch(0.26 0.014 50);      /* popovers, modals */
+  --surface-4: oklch(0.30 0.016 50);      /* active, selected */
+
+  /* Ink (reduced weight — dark mode text appears heavier) */
+  --ink-1: oklch(0.94 0.008 55);
+  --ink-2: oklch(0.80 0.008 55);
+  --ink-3: oklch(0.62 0.010 55);
+  --ink-4: oklch(0.46 0.010 55);
+
+  --line-1: oklch(0.28 0.012 50);
+  --line-2: oklch(0.36 0.014 50);
+
+  /* Amber desaturated for dark surfaces */
+  --amber: oklch(0.70 0.11 60);
+  --amber-hover: oklch(0.75 0.12 60);
+  --amber-soft: oklch(0.28 0.05 55);
+  --amber-ink: oklch(0.78 0.10 60);
+
+  --cat-property: oklch(0.68 0.09 240);
+  --cat-vehicle: oklch(0.70 0.09 165);
+  --cat-service: oklch(0.72 0.11 60);
+  --cat-experience: oklch(0.72 0.11 300);  /* violet desaturated for dark */
+
+  --red: oklch(0.68 0.17 25);
+  --green: oklch(0.70 0.13 155);
+  --yellow: oklch(0.82 0.13 80);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/60;
+    scrollbar-width: thin;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+    font-feature-settings: 'ss01', 'cv11', 'cv04';
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Dark mode: lighter weight to compensate for perceived weight */
+  }
+
+  .dark body {
+    font-weight: 350;
+  }
+
+  /* Editorial display headings */
+  .font-display,
+  .display {
+    font-family: var(--font-display);
+    font-feature-settings: 'ss01', 'ss02', 'ss03', 'liga';
+    font-variation-settings: 'opsz' 144, 'SOFT' 50, 'WONK' 0;
+    letter-spacing: -0.02em;
+    line-height: 0.96;
+  }
+
+  /* Tabular numerics for prices/data */
+  .tabular,
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1, 'lnum' 1;
+  }
+
+  /* Smooth theme transitions on surfaces only */
+  body,
+  [data-surface] {
+    transition: background-color 0.24s var(--ease-out-quart),
+                border-color 0.24s var(--ease-out-quart);
+  }
+
+  /* Focus — editorial, visible on both themes */
+  :focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--amber-soft);
+    color: var(--ink-1);
+  }
+}
+
+/* ─── Editorial rule — thin horizontal divider ─────────────── */
+.rule {
+  border: 0;
+  height: 1px;
+  background: var(--line-1);
+  margin: 2rem 0;
+}
+
+/* ─── Editorial meta label — uppercase, tracked ────────────── */
+.meta-label {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Map container must fill its parent */
+.maplibregl-map {
+  width: 100%;
+  height: 100%;
+}
+
+/* MapLibre popup restyle for editorial look */
+.maplibregl-popup-content {
+  background: var(--surface-1) !important;
+  border: 1px solid var(--line-1) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-popup) !important;
+  color: var(--ink-1) !important;
+  padding: 0 !important;
+}
+.maplibregl-popup-tip {
+  border-top-color: var(--surface-1) !important;
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+

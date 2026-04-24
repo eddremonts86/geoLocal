@@ -1,0 +1,19 @@
+{
+  "source": "airbnb",
+  "model": "google/gemma-4-e4b",
+  "samples": 2,
+  "findings": [
+    {
+      "reasoning": "",
+      "usefulness": "high",
+      "field_path": "href",
+      "notes": "The href contains critical location context (e.g., '?location=Denmark') and search parameters that should be parsed into structured location data."
+    },
+    {
+      "reasoning": "",
+      "usefulness": "medium",
+      "field_path": "type",
+      "notes": "While 'stay'/'experience' is present, a more granular category or sub-type might be available in the full payload for better filtering."
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "source": "linkedin",
+  "model": "google/gemma-4-e4b",
+  "samples": 2,
+  "findings": [
+    {
+      "path": "company",
+      "reasoning": "",
+      "usefulness": "high"
+    }
+  ]
+}

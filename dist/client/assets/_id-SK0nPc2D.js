@@ -1,0 +1,1 @@
+import{l as e,n as t}from"./react-dom-T69vw8w8.js";import{t as n}from"./ListingFormPage-C60WYXr0.js";var r=e(t());function i(){return(0,r.jsx)(n,{})}export{i as component};

@@ -1,0 +1,37 @@
+{
+  "source": "homestra",
+  "model": "google/gemma-4-e4b",
+  "samples": 2,
+  "findings": [
+    {
+      "reasoning": "",
+      "usefulness": "high",
+      "field_path": "size",
+      "description": "The living area size (in square meters). Crucial quantitative filter."
+    },
+    {
+      "reasoning": "",
+      "usefulness": "high",
+      "field_path": "lotSize",
+      "description": "The total plot/land size. Essential for country properties."
+    },
+    {
+      "reasoning": "",
+      "usefulness": "high",
+      "field_path": "type",
+      "description": "The property type (e.g., 'villa', 'house'). Primary categorization."
+    },
+    {
+      "reasoning": "",
+      "usefulness": "medium",
+      "field_path": "description",
+      "description": "Rich text body containing specific details like number of bedrooms, construction year, and unique amenities (e.g., 'thatched roof', 'fireplace')."
+    },
+    {
+      "reasoning": "",
+      "usefulness": "medium",
+      "field_path": "location.coordinates",
+      "description": "Precise geo-coordinates for mapping features on the dashboard."
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4-alpine
+    ports:
+      - '5434:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: geo_dashboard
+    volumes:
+      - geo_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Scraper: run once on demand ─────────────────────────────────────────────
+  # Usage:
+  #   docker compose --profile scraping run --rm scraper
+  #   docker compose --profile scraping run --rm scraper --source airbnb --max 50
+  #   docker compose --profile scraping run --rm scraper --source facebook-events --dry-run
+  scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile.scraper
+    profiles: ['scraping']
+    restart: 'no'
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/geo_dashboard
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+    volumes:
+      # Mount cookies file (created by: pnpm run scrape:cookies)
+      - ./scripts/scraping/.fb-cookies.json:/app/scripts/scraping/.fb-cookies.json:ro
+
+  # ── Scraper: scheduled (runs every SCRAPE_INTERVAL_HOURS hours) ─────────────
+  # Starts automatically with: docker compose up -d
+  # Scrapes all sources on start, then repeats every 6 hours.
+  # Logs: docker compose logs -f scraper-cron
+  # Stop: docker compose stop scraper-cron
+  scraper-cron:
+    build:
+      context: .
+      dockerfile: Dockerfile.scraper
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/geo_dashboard
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+      SCRAPE_SCHEDULE: 'true'
+      SCRAPE_INTERVAL_HOURS: '6'
+    volumes:
+      - ./scripts/scraping/.fb-cookies.json:/app/scripts/scraping/.fb-cookies.json:ro
+
+volumes:
+  geo_db_data:

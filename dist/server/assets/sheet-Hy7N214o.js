@@ -1,0 +1,117 @@
+import { t as cn } from "./utils-C98NY0TH.js";
+import { useCallback, useEffect, useState } from "react";
+import { jsx, jsxs } from "react/jsx-runtime";
+import { Dialog } from "radix-ui";
+import { XIcon } from "lucide-react";
+//#region src/modules/shared/hooks/useTheme.ts
+var STORAGE_KEY = "geolocal-theme";
+function getSystemTheme() {
+	if (typeof window === "undefined") return "light";
+	return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+function readInitialTheme() {
+	if (typeof window === "undefined") return "system";
+	return localStorage.getItem(STORAGE_KEY) ?? "system";
+}
+function applyTheme(theme) {
+	if (typeof document === "undefined") return;
+	const resolved = theme === "system" ? getSystemTheme() : theme;
+	document.documentElement.classList.toggle("dark", resolved === "dark");
+}
+var listeners = /* @__PURE__ */ new Set();
+var currentTheme = typeof window === "undefined" ? "system" : readInitialTheme();
+function setGlobalTheme(next) {
+	currentTheme = next;
+	applyTheme(next);
+	if (typeof window !== "undefined") try {
+		localStorage.setItem(STORAGE_KEY, next);
+	} catch {}
+	listeners.forEach((fn) => fn(next));
+}
+if (typeof window !== "undefined") applyTheme(currentTheme);
+function useTheme() {
+	const [theme, setThemeLocal] = useState(currentTheme);
+	useEffect(() => {
+		const fn = (t) => setThemeLocal(t);
+		listeners.add(fn);
+		if (currentTheme !== theme) setThemeLocal(currentTheme);
+		return () => {
+			listeners.delete(fn);
+		};
+	}, []);
+	useEffect(() => {
+		const mq = window.matchMedia("(prefers-color-scheme: dark)");
+		const handler = () => {
+			if (currentTheme === "system") {
+				applyTheme("system");
+				listeners.forEach((fn) => fn("system"));
+			}
+		};
+		mq.addEventListener("change", handler);
+		return () => mq.removeEventListener("change", handler);
+	}, []);
+	return {
+		theme,
+		setTheme: useCallback((newTheme) => {
+			setGlobalTheme(newTheme);
+		}, []),
+		resolvedTheme: theme === "system" ? getSystemTheme() : theme
+	};
+}
+//#endregion
+//#region src/components/ui/sheet.tsx
+function Sheet({ ...props }) {
+	return /* @__PURE__ */ jsx(Dialog.Root, {
+		"data-slot": "sheet",
+		...props
+	});
+}
+function SheetTrigger({ ...props }) {
+	return /* @__PURE__ */ jsx(Dialog.Trigger, {
+		"data-slot": "sheet-trigger",
+		...props
+	});
+}
+function SheetPortal({ ...props }) {
+	return /* @__PURE__ */ jsx(Dialog.Portal, {
+		"data-slot": "sheet-portal",
+		...props
+	});
+}
+function SheetOverlay({ className, ...props }) {
+	return /* @__PURE__ */ jsx(Dialog.Overlay, {
+		"data-slot": "sheet-overlay",
+		className: cn("fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0", className),
+		...props
+	});
+}
+function SheetContent({ className, children, side = "right", showCloseButton = true, ...props }) {
+	return /* @__PURE__ */ jsxs(SheetPortal, { children: [/* @__PURE__ */ jsx(SheetOverlay, {}), /* @__PURE__ */ jsxs(Dialog.Content, {
+		"data-slot": "sheet-content",
+		className: cn("fixed z-50 flex flex-col gap-4 bg-background shadow-lg transition ease-in-out data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=open]:duration-500", side === "right" && "inset-y-0 right-0 h-full w-3/4 border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm", side === "left" && "inset-y-0 left-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm", side === "top" && "inset-x-0 top-0 h-auto border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top", side === "bottom" && "inset-x-0 bottom-0 h-auto border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom", className),
+		...props,
+		children: [children, showCloseButton && /* @__PURE__ */ jsxs(Dialog.Close, {
+			className: "absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-secondary",
+			children: [/* @__PURE__ */ jsx(XIcon, { className: "size-4" }), /* @__PURE__ */ jsx("span", {
+				className: "sr-only",
+				children: "Close"
+			})]
+		})]
+	})] });
+}
+function SheetHeader({ className, ...props }) {
+	return /* @__PURE__ */ jsx("div", {
+		"data-slot": "sheet-header",
+		className: cn("flex flex-col gap-1.5 p-4", className),
+		...props
+	});
+}
+function SheetTitle({ className, ...props }) {
+	return /* @__PURE__ */ jsx(Dialog.Title, {
+		"data-slot": "sheet-title",
+		className: cn("font-semibold text-foreground", className),
+		...props
+	});
+}
+//#endregion
+export { SheetTrigger as a, SheetTitle as i, SheetContent as n, useTheme as o, SheetHeader as r, Sheet as t };

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <rect width="400" height="300" fill="#F0EDE8"/>
+  <!-- subtle grid pattern -->
+  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#E0DAD3" stroke-width="0.5"/>
+  </pattern>
+  <rect width="400" height="300" fill="url(#grid)"/>
+  <!-- central icon frame -->
+  <rect x="155" y="105" width="90" height="90" rx="8" fill="#E0DAD3"/>
+  <!-- landscape icon -->
+  <circle cx="181" cy="133" r="10" fill="#C4BBB1"/>
+  <path d="M158 175 L185 148 L205 168 L220 152 L242 175Z" fill="#C4BBB1"/>
+</svg>

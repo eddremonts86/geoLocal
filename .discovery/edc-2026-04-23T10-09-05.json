@@ -1,0 +1,31 @@
+{
+  "source": "edc",
+  "model": "google/gemma-4-e4b",
+  "samples": 2,
+  "findings": [
+    {
+      "reasoning": "",
+      "usefulness": "high",
+      "field_path": "@type",
+      "description": "The type of property (e.g., House, Apartment) is critical for categorization and filtering."
+    },
+    {
+      "reasoning": "",
+      "usefulness": "medium",
+      "field_path": "_offerWrapper.seller.name",
+      "description": "The name of the real estate agent/seller, useful for contact and attribution."
+    },
+    {
+      "reasoning": "",
+      "usefulness": "medium",
+      "field_path": "_offerWrapper.seller.telephone",
+      "description": "Direct contact information for the seller/agent."
+    },
+    {
+      "reasoning": "",
+      "usefulness": "medium",
+      "field_path": "_offerWrapper.floorLevel",
+      "description": "Specific detail about the unit's location within the building (e.g., 2nd floor)."
+    }
+  ]
+}

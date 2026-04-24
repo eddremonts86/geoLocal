@@ -1,0 +1,31 @@
+{
+  "source": "facebook-events",
+  "model": "google/gemma-4-e4b",
+  "samples": 2,
+  "findings": [
+    {
+      "path": "description",
+      "reasoning": "",
+      "usefulness": "high",
+      "notes": "Contains vital context, organizer names, and often the specific date/time details if startDate/endDate are missing or ambiguous."
+    },
+    {
+      "path": "startDate",
+      "reasoning": "",
+      "usefulness": "high",
+      "notes": "Crucial for event listings; currently null but present in the raw payload."
+    },
+    {
+      "path": "endDate",
+      "reasoning": "",
+      "usefulness": "high",
+      "notes": "Crucial for event listings; currently null but present in the raw payload."
+    },
+    {
+      "path": "locationCity",
+      "reasoning": "",
+      "usefulness": "high",
+      "notes": "Provides structured geographical context beyond just coordinates."
+    }
+  ]
+}

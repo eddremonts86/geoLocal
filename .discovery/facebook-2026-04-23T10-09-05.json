@@ -1,0 +1,25 @@
+{
+  "source": "facebook",
+  "model": "google/gemma-4-e4b",
+  "samples": 2,
+  "findings": [
+    {
+      "reasoning": "",
+      "usefulness": "high",
+      "field_path": "location",
+      "description": "Parse the combined location string into structured fields: bedrooms, bathrooms, and property type. Example from Sample 2 suggests this is possible ('3 habitaciones 1 baño - Casa')."
+    },
+    {
+      "reasoning": "",
+      "usefulness": "high",
+      "field_path": "location",
+      "description": "Extract the specific property type or listing category (e.g., 'Casa', 'Apartment') from the location string for better filtering."
+    },
+    {
+      "reasoning": "",
+      "usefulness": "medium",
+      "field_path": "location",
+      "description": "If available, extract precise geographical coordinates (latitude/longitude) instead of relying solely on the descriptive location string."
+    }
+  ]
+}

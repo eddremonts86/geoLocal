@@ -1,0 +1,50 @@
+# ─── GeoLocal Scraper ─────────────────────────────────────────────────────────
+# Playwright-based scraper container.
+# Chromium is pre-installed by the base image at /ms-playwright.
+#
+# Build:
+#   docker compose --profile scraping build scraper
+#
+# Run once:
+#   docker compose --profile scraping run --rm scraper
+#   docker compose --profile scraping run --rm scraper --source airbnb --max 50
+#
+# Run scheduled (stays alive, re-runs every SCRAPE_INTERVAL_HOURS hours):
+#   docker compose --profile scraping up -d scraper-cron
+
+FROM mcr.microsoft.com/playwright:v1.59.1-jammy
+
+# ── System deps ───────────────────────────────────────────────────────────────
+RUN corepack enable && corepack prepare pnpm@9 --activate
+
+WORKDIR /app
+
+# ── Dependencies ──────────────────────────────────────────────────────────────
+# Copy manifests first to leverage layer cache
+COPY package.json pnpm-lock.yaml ./
+
+# Install all deps (includes playwright + tsx + drizzle-orm + postgres)
+# --ignore-scripts avoids re-downloading Playwright browsers (already in base image)
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+# ── Source files ──────────────────────────────────────────────────────────────
+# Only copy what the scraper needs — keeps the layer lean
+COPY tsconfig.json ./
+COPY src/shared/lib/db ./src/shared/lib/db
+COPY scripts/scraping ./scripts/scraping
+
+# ── Playwright environment ────────────────────────────────────────────────────
+# Base image pre-installs browsers here
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+
+# Default DATABASE_URL — override via docker-compose environment
+ENV DATABASE_URL=postgresql://postgres:postgres@db:5432/geo_dashboard
+
+# ── Entrypoint ────────────────────────────────────────────────────────────────
+COPY scripts/scraping/docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x docker-entrypoint.sh
+
+ENTRYPOINT ["/bin/sh", "docker-entrypoint.sh"]
+
+# Default: run all sources with 100 items each
+CMD ["--source", "all", "--max", "100"]

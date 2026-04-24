@@ -1,0 +1,37 @@
+{
+  "source": "boliga",
+  "model": "google/gemma-4-e4b",
+  "samples": 2,
+  "findings": [
+    {
+      "reasoning": "",
+      "usefulness": "high",
+      "field_path": "energyClass",
+      "description": "The energy efficiency rating of the property."
+    },
+    {
+      "reasoning": "",
+      "usefulness": "high",
+      "field_path": "size",
+      "description": "The total size/area of the property in square meters."
+    },
+    {
+      "reasoning": "",
+      "usefulness": "high",
+      "field_path": "rooms",
+      "description": "The number of rooms in the property."
+    },
+    {
+      "reasoning": "",
+      "usefulness": "medium",
+      "field_path": "buildYear",
+      "description": "The year the property was built."
+    },
+    {
+      "reasoning": "",
+      "usefulness": "medium",
+      "field_path": "lotSize",
+      "description": "The size of the plot/lot in square meters."
+    }
+  ]
+}

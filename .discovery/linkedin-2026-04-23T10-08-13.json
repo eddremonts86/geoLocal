@@ -1,0 +1,19 @@
+{
+  "source": "linkedin",
+  "model": "google/gemma-4-e4b",
+  "samples": 2,
+  "findings": [
+    {
+      "path": "company",
+      "reasoning": "",
+      "usefulness": "high",
+      "description": "The name of the hiring company (e.g., 'føtex, Salling Group', 'Alfa Laval') is present in the raw data but not mapped to a dedicated field in the extracted output. This is critical for geo-listing dashboards."
+    },
+    {
+      "path": "isService",
+      "reasoning": "",
+      "usefulness": "medium",
+      "description": "A boolean flag indicating the nature of the listing, which provides valuable context alongside 'listingIntent'."
+    }
+  ]
+}

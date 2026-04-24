@@ -1,0 +1,1 @@
+import{l as e,r as t}from"./react-dom-T69vw8w8.js";import{n}from"./shim-Hepk01Cb.js";var r=e(t(),1);function i(e){let t=n();return r.useCallback(n=>t.navigate({...n,from:n.from??e?.from}),[e?.from,t])}export{i as t};

@@ -1,0 +1,37 @@
+{
+  "source": "boligsiden",
+  "model": "google/gemma-4-e4b",
+  "samples": 2,
+  "findings": [
+    {
+      "path": "listing_body/description",
+      "reasoning": "",
+      "usefulness": "high",
+      "notes": "The full textual description of the property, which is currently only partially captured in image alt tags."
+    },
+    {
+      "path": "property_specs/numberOfRooms",
+      "reasoning": "",
+      "usefulness": "high",
+      "notes": "The count of rooms/bedrooms, a critical metric for buyers."
+    },
+    {
+      "path": "property_specs/livingAreaSqM",
+      "reasoning": "",
+      "usefulness": "high",
+      "notes": "The total living area size in square meters."
+    },
+    {
+      "path": "property_details/amenities",
+      "reasoning": "",
+      "usefulness": "medium",
+      "notes": "A structured list of features (e.g., garden, terrace, garage, basement)."
+    },
+    {
+      "path": "property_details/energyRating",
+      "reasoning": "",
+      "usefulness": "medium",
+      "notes": "The official energy efficiency rating of the building."
+    }
+  ]
+}
