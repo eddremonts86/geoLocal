@@ -1,15 +1,13 @@
 // ─── Scraping shared types ────────────────────────────────────────────────────
 // Used by all scrapers, transformers, and the storage layer.
 
-export type ScrapedSource =
-  | 'airbnb'
-  | 'facebook'
-  | 'facebook-events'
-  | 'linkedin'
-  | 'edc'
-  | 'homestra'
-  | 'boligsiden'
-  | 'boliga'
+/**
+ * Source identifier. Free-form string since migration 0008 removed the
+ * pg enum — the runtime authority of "which sources have a scraper" is the
+ * SCRAPER_REGISTRY in scripts/scraping/runner.ts. Downstream code should
+ * tolerate unknown values (they'll just show up as the raw key in the UI).
+ */
+export type ScrapedSource = string
 
 export type MappedCategory = 'property' | 'service' | 'experience' | 'vehicle'
 

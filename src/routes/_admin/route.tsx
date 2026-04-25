@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { auth } from '@clerk/tanstack-react-start/server'
-import { AdminLayout } from '@/modules/admin/ui/AdminLayout'
+import { AdminShell } from '@/modules/admin/ui/AdminShell'
 
 const requireAdmin = createServerFn().handler(async () => {
   const { isAuthenticated } = await auth()
@@ -19,8 +19,8 @@ export const Route = createFileRoute('/_admin')({
 
 function AdminLayoutWrapper() {
   return (
-    <AdminLayout>
+    <AdminShell>
       <Outlet />
-    </AdminLayout>
+    </AdminShell>
   )
 }

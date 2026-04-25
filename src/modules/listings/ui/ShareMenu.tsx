@@ -22,6 +22,8 @@ export interface ShareMenuProps {
    * that opens native share (mobile) or the dropdown (desktop).
    */
   className?: string
+  /** Override inline styles on the trigger button. */
+  buttonStyle?: React.CSSProperties
   ariaLabel?: string
 }
 
@@ -32,7 +34,7 @@ export interface ShareMenuProps {
  *
  * Safe on SSR — guards all `window`/`navigator` access.
  */
-export function ShareMenu({ url, title, text, className, ariaLabel }: ShareMenuProps) {
+export function ShareMenu({ url, title, text, className, buttonStyle, ariaLabel }: ShareMenuProps) {
   const { t } = useTranslation()
   const [copied, setCopied] = useState(false)
   const [open, setOpen] = useState(false)
@@ -88,7 +90,7 @@ export function ShareMenu({ url, title, text, className, ariaLabel }: ShareMenuP
       variant="ghost"
       size="icon"
       className={className ?? 'rounded-none'}
-      style={{ color: 'var(--ink-3)' }}
+      style={buttonStyle ?? { color: 'var(--ink-3)' }}
       aria-label={ariaLabel ?? t('share.label', 'Share')}
       onClick={canNativeShare ? handleTriggerClick : undefined}
     >

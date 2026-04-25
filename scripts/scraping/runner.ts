@@ -26,6 +26,8 @@ import { scrapeEdc } from './scrapers/edc'
 import { scrapeBoligsiden } from './scrapers/boligsiden'
 import { scrapeBoliga } from './scrapers/boliga'
 import { scrapeHomestra } from './scrapers/homestra'
+import { scrapeBilbasen } from './scrapers/bilbasen'
+import { scrapeDba } from './scrapers/dba'
 import { saveScrapeResults, printSummary, type NormaliseMeta } from './storage'
 import { normaliseBatch } from './normalise'
 import { isAIEnabled } from '../../src/shared/lib/ai'
@@ -35,10 +37,28 @@ interface ParsedOptions extends RunnerOptions {
   skipAI: boolean
 }
 
-const ALL_SOURCES: ScrapedSource[] = [
-  'airbnb', 'facebook', 'facebook-events', 'linkedin',
-  'edc', 'homestra', 'boligsiden', 'boliga',
-]
+type ScraperFn = (opts: { maxItems: number; dryRun: boolean }) => Promise<ScrapeResult>
+
+/**
+ * Registry of scrapers we know how to run. Source keys approved in the admin
+ * discovery flow that are NOT in this map appear in the UI as
+ * "Approved · awaiting scraper" — approving a candidate no longer requires a
+ * DB migration, only adding an entry here once a scraper module is written.
+ */
+export const SCRAPER_REGISTRY: Record<string, ScraperFn> = {
+  airbnb: scrapeAirbnb,
+  facebook: scrapeFacebook,
+  'facebook-events': scrapeFacebookEvents,
+  linkedin: scrapeLinkedIn,
+  edc: scrapeEdc,
+  homestra: scrapeHomestra,
+  boligsiden: scrapeBoligsiden,
+  boliga: scrapeBoliga,
+  bilbasen: scrapeBilbasen,
+  dba: scrapeDba,
+}
+
+const ALL_SOURCES: ScrapedSource[] = Object.keys(SCRAPER_REGISTRY)
 
 function parseArgs(): ParsedOptions {
   const args = process.argv.slice(2)
@@ -55,10 +75,10 @@ function parseArgs(): ParsedOptions {
   if (!rawSource || rawSource === 'all') {
     sources = ALL_SOURCES
   } else {
-    const parts = rawSource.split(',').map((s) => s.trim()) as ScrapedSource[]
-    const invalid = parts.filter((s) => !ALL_SOURCES.includes(s))
+    const parts = rawSource.split(',').map((s) => s.trim())
+    const invalid = parts.filter((s) => !SCRAPER_REGISTRY[s])
     if (invalid.length > 0) {
-      console.error(`Unknown source(s): ${invalid.join(', ')}. Valid: ${ALL_SOURCES.join(', ')}, all`)
+      console.error(`No scraper registered for: ${invalid.join(', ')}. Known: ${ALL_SOURCES.join(', ')}, all`)
       process.exit(1)
     }
     sources = parts
@@ -75,16 +95,9 @@ async function runOne(
   source: ScrapedSource,
   overrides: { maxItems: number; dryRun: boolean },
 ): Promise<ScrapeResult> {
-  switch (source) {
-    case 'airbnb':          return scrapeAirbnb(overrides)
-    case 'facebook':        return scrapeFacebook(overrides)
-    case 'facebook-events': return scrapeFacebookEvents(overrides)
-    case 'linkedin':        return scrapeLinkedIn(overrides)
-    case 'edc':             return scrapeEdc(overrides)
-    case 'boligsiden':      return scrapeBoligsiden(overrides)
-    case 'boliga':          return scrapeBoliga(overrides)
-    case 'homestra':        return scrapeHomestra(overrides)
-  }
+  const fn = SCRAPER_REGISTRY[source]
+  if (!fn) throw new Error(`No scraper registered for source "${source}"`)
+  return fn(overrides)
 }
 
 async function run() {

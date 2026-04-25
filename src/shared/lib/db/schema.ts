@@ -364,22 +364,50 @@ export const scrapedRawStatusEnum = pgEnum('scraped_raw_status', [
   'rejected',
 ])
 
-export const scrapedSourceEnum = pgEnum('scraped_source', [
-  'airbnb',
-  'facebook',
-  'facebook-events',
-  'linkedin',
-  'edc',
-  'homestra',
-  'boligsiden',
-  'boliga',
+// ─── Scraping sources registry ────────────────────────────────────────────────
+// Single source of truth for "which sources can appear in scraped_raw.source".
+// Approving a candidate in the discovery page INSERTs a row here (kind='none');
+// shipping a scraper for it just UPDATEs kind='built-in'. No DB migration
+// needed for either action.
+
+export const scrapingSourceStatusEnum = pgEnum('scraping_source_status', [
+  'active',
+  'paused',
+  'deprecated',
 ])
+
+export const scrapingSourceKindEnum = pgEnum('scraping_source_kind', [
+  'built-in', // has a scraper module in scripts/scraping/scrapers/*
+  'external', // ingested via external pipeline (future)
+  'none',     // approved by a human but no scraper wired up yet
+])
+
+export const scrapingSources = pgTable(
+  'scraping_sources',
+  {
+    // Stable identifier used as FK target by scraped_raw.source.
+    key: varchar('key', { length: 64 }).primaryKey(),
+    label: varchar('label', { length: 120 }).notNull(),
+    domain: varchar('domain', { length: 255 }).notNull(),
+    status: scrapingSourceStatusEnum('status').notNull().default('active'),
+    kind: scrapingSourceKindEnum('kind').notNull().default('none'),
+    country: varchar('country', { length: 2 }),
+    notes: text('notes'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('idx_scraping_sources_status').on(table.status),
+    index('idx_scraping_sources_kind').on(table.kind),
+  ],
+)
 
 export const scrapedRaw = pgTable(
   'scraped_raw',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    source: scrapedSourceEnum('source').notNull(),
+    source: varchar('source', { length: 64 })
+      .notNull()
+      .references(() => scrapingSources.key, { onUpdate: 'cascade', onDelete: 'restrict' }),
     sourceId: text('source_id').notNull(),
     sourceUrl: text('source_url').notNull(),
     rawData: jsonb('raw_data').notNull(),

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { m } from 'framer-motion'
 import {
-  Globe, Check, X, Eye, ChevronLeft, ChevronRight, Sparkles,
+  Check, X, Eye, ChevronLeft, ChevronRight, Sparkles,
   Home, Wrench, ExternalLink, RefreshCw, Code2, MapPin, Calendar,
   Tag, ImageOff, CheckCheck, Loader2,
 } from 'lucide-react'
@@ -321,39 +321,44 @@ export function ScrapingReviewPage() {
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <m.div
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
-        className="flex items-start justify-between"
-      >
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Globe className="h-5 w-5 text-muted" />
-            <h1 className="font-display text-2xl text-foreground">Scraped Items Review</h1>
-          </div>
-          <p className="text-sm text-muted">
-            Review items collected from Airbnb, Facebook, and LinkedIn before publishing.
+    <div className="space-y-10">
+      {/* Masthead */}
+      <header className="flex flex-wrap items-end justify-between gap-6 border-b border-(--line-1) pb-6">
+        <div className="space-y-2">
+          <span className="meta-label" style={{ color: 'var(--ink-3)' }}>
+            03 · Pipeline · Review queue
+          </span>
+          <h1 className="font-display text-[clamp(2.25rem,1.6rem+2vw,3.25rem)] font-medium leading-none tracking-tight text-foreground">
+            Scraped items
+          </h1>
+          <p className="max-w-2xl text-sm leading-relaxed" style={{ color: 'var(--ink-2)' }}>
+            Review items collected from Airbnb, Facebook, LinkedIn and more before publishing.
+            <span className="ml-2 tabular-nums" style={{ color: 'var(--ink-3)' }}>
+              · {total.toLocaleString()} {statusFilter === 'all' ? 'items' : statusFilter}
+            </span>
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
-            <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            className="rounded-none border-(--line-1)"
+          >
+            <RefreshCw className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.5} />
             Refresh
           </Button>
           <Button
             size="sm"
-            className="bg-green-600 hover:bg-green-700 text-white"
             onClick={() => setPublishAllConfirm(true)}
             disabled={total === 0 || statusFilter === 'published' || statusFilter === 'rejected'}
+            className="rounded-none bg-foreground text-background hover:opacity-90"
           >
-            <CheckCheck className="mr-1.5 h-3.5 w-3.5" />
-            Publish All ({total})
+            <CheckCheck className="mr-1.5 h-3.5 w-3.5" strokeWidth={1.5} />
+            Publish all ({total})
           </Button>
         </div>
-      </m.div>
+      </header>
 
       {/* Filters */}
       <Card>

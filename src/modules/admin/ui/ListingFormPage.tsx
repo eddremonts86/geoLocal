@@ -167,39 +167,69 @@ export function ListingFormPage({ initialCategory }: ListingFormPageProps) {
         : SERVICE_SUBCATEGORIES
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-6 lg:p-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{t('admin.newListing', 'New Listing')}</h1>
+    <div className="mx-auto max-w-3xl space-y-10">
+      {/* Masthead */}
+      <header className="flex flex-wrap items-end justify-between gap-6 border-b border-(--line-1) pb-6">
+        <div className="space-y-2">
+          <span className="meta-label" style={{ color: 'var(--ink-3)' }}>
+            02 · Catalog · New listing
+          </span>
+          <h1 className="font-display text-[clamp(2rem,1.5rem+1.6vw,2.75rem)] font-medium leading-none tracking-tight text-foreground">
+            {t('admin.newListing', 'New listing')}
+          </h1>
+          <p className="text-sm" style={{ color: 'var(--ink-3)' }}>
+            Step {step + 1} of {STEPS.length} · {STEPS[step]}
+          </p>
+        </div>
         <Button
           variant="outline"
           size="sm"
           onClick={() => mutation.mutate('draft')}
           disabled={mutation.isPending || !form.titleEn}
+          className="rounded-none border-(--line-1)"
         >
-          <Save className="mr-2 h-4 w-4" />
-          {t('admin.saveDraft', 'Save Draft')}
+          <Save className="mr-2 h-4 w-4" strokeWidth={1.5} />
+          {t('admin.saveDraft', 'Save draft')}
         </Button>
-      </div>
+      </header>
 
-      {/* Progress */}
-      <div className="flex items-center gap-1">
-        {STEPS.map((label, i) => (
-          <div key={label} className="flex items-center gap-1">
+      {/* Progress stepper */}
+      <nav aria-label="Form progress" className="flex items-center justify-between gap-2">
+        {STEPS.map((label, i) => {
+          const isCurrent = i === step
+          const isDone = i < step
+          return (
             <button
+              key={label}
               onClick={() => setStep(i)}
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium transition ${
-                i < step ? 'bg-primary text-primary-foreground'
-                  : i === step ? 'bg-primary/20 text-primary ring-2 ring-primary'
-                    : 'bg-muted text-muted-foreground'
-              }`}
+              className="group flex flex-1 items-center gap-2 text-left"
+              aria-current={isCurrent ? 'step' : undefined}
             >
-              {i < step ? <Check className="h-4 w-4" /> : i + 1}
+              <span
+                className={`flex h-6 w-6 items-center justify-center font-display text-xs font-medium tabular-nums transition-colors ${
+                  isDone
+                    ? 'bg-foreground text-background'
+                    : isCurrent
+                      ? 'bg-(--ink-1) text-background'
+                      : 'bg-(--surface-2) text-(--ink-3) group-hover:bg-(--surface-3)'
+                }`}
+              >
+                {isDone ? <Check className="h-3 w-3" strokeWidth={2} /> : i + 1}
+              </span>
+              <span
+                className={`meta-label hidden sm:inline ${
+                  isCurrent ? 'text-foreground' : 'text-(--ink-3) group-hover:text-foreground'
+                }`}
+              >
+                {label}
+              </span>
+              {i < STEPS.length - 1 && (
+                <div className="ml-1 hidden h-px flex-1 bg-(--line-1) sm:block" aria-hidden />
+              )}
             </button>
-            <span className="hidden text-xs text-muted-foreground sm:inline">{label}</span>
-            {i < STEPS.length - 1 && <div className="mx-1 h-px w-4 bg-border sm:w-8" />}
-          </div>
-        ))}
-      </div>
+          )
+        })}
+      </nav>
 
       {/* Step content */}
       <AnimatePresence mode="wait">
@@ -590,17 +620,21 @@ export function ListingFormPage({ initialCategory }: ListingFormPageProps) {
       </AnimatePresence>
 
       {/* Navigation */}
-      <div className="flex justify-between">
+      <div className="flex items-center justify-between border-t border-(--line-1) pt-6">
         <Button
           variant="outline"
           onClick={() => setStep((s) => s - 1)}
           disabled={step === 0}
+          className="rounded-none border-(--line-1)"
         >
-          <ChevronLeft className="mr-1 h-4 w-4" /> Previous
+          <ChevronLeft className="mr-1 h-4 w-4" strokeWidth={1.5} /> Previous
         </Button>
         {step < STEPS.length - 1 && (
-          <Button onClick={() => setStep((s) => s + 1)}>
-            Next <ChevronRight className="ml-1 h-4 w-4" />
+          <Button
+            onClick={() => setStep((s) => s + 1)}
+            className="rounded-none bg-foreground text-background hover:opacity-90"
+          >
+            Next <ChevronRight className="ml-1 h-4 w-4" strokeWidth={1.5} />
           </Button>
         )}
       </div>

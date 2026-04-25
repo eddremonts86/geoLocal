@@ -267,6 +267,36 @@ function fromLinkedin(raw: any): RuleNormalised {
   }
 }
 
+// Both bilbasen and dba produce JSON-LD `Product` payloads with the same
+// shape, so a single normaliser works for both.
+function fromJsonLdProduct(raw: any): RuleNormalised {
+  const rawImg = raw?.image
+  const images: string[] = Array.isArray(rawImg)
+    ? rawImg.filter((u: unknown) => typeof u === 'string')
+    : typeof rawImg === 'string'
+      ? [rawImg]
+      : []
+  const brand =
+    typeof raw?.brand === 'string'
+      ? raw.brand
+      : typeof raw?.brand?.name === 'string'
+        ? raw.brand.name
+        : undefined
+  const model = str(raw?.model)
+  const name = str(raw?.name) ?? ([brand, model].filter(Boolean).join(' ') || undefined)
+  const price = num(raw?.offers?.price)
+  const currency = str(raw?.offers?.priceCurrency)
+  return {
+    title: name,
+    imageUrl: images[0],
+    imageUrls: images.length > 0 ? images : undefined,
+    price,
+    currency,
+    mappedCategory: 'vehicle',
+    listingIntent: 'for_sale',
+  }
+}
+
 // ─── public API ───────────────────────────────────────────────────────────────
 
 /**
@@ -286,6 +316,8 @@ export function ruleNormalise(source: ScrapedSource, raw: unknown): RuleNormalis
     case 'facebook':   out = fromFacebook(r); break
     case 'facebook-events': out = fromFacebookEvents(r); break
     case 'linkedin':   out = fromLinkedin(r); break
+    case 'bilbasen':   out = fromJsonLdProduct(r); break
+    case 'dba':        out = fromJsonLdProduct(r); break
     default: return null
   }
   const intent = str(r?._listingIntent)

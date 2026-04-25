@@ -8,6 +8,7 @@ import { VehicleCardMetrics } from '@/modules/listings/cards/VehicleCard'
 import { ServiceCardMetrics } from '@/modules/listings/cards/ServiceCard'
 import { ExperienceCardMetrics } from '@/modules/listings/cards/ExperienceCard'
 import { useFavorites } from '@/modules/favorites/ui/useFavorites'
+import { ShareMenu } from '@/modules/listings/ui/ShareMenu'
 import type { ListingListItem } from '@/modules/listings/model/types'
 import {
   CATEGORY_ACCENT_VAR,
@@ -114,6 +115,25 @@ export function ListingCard({ item, isActive, isFavorite, onSelect, onFavorite, 
               }}
             />
           </button>
+
+          {/* Share — top right, next to heart */}
+          <div
+            className="absolute right-10 top-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ShareMenu
+              url={
+                typeof window !== 'undefined'
+                  ? `${window.location.origin}/listing/${item.slug}`
+                  : undefined
+              }
+              title={item.title}
+              text={item.summary ?? undefined}
+              className="h-7 w-7 rounded-full bg-background/85 p-0 backdrop-blur-sm hover:bg-background"
+              buttonStyle={{ color: 'var(--ink-2)' }}
+              ariaLabel={t('share.label', 'Share')}
+            />
+          </div>
           {/* Price — bottom left, over gradient */}
           <div className="absolute bottom-2 left-2.5">
             <p className="font-display text-base font-semibold tabular-nums leading-tight text-white">
@@ -287,6 +307,25 @@ export function ListingCard({ item, isActive, isFavorite, onSelect, onFavorite, 
               />
             </Button>
           )}
+
+          {/* Share — top right, next to heart */}
+          <div
+            className="absolute right-10 top-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ShareMenu
+              url={
+                typeof window !== 'undefined'
+                  ? `${window.location.origin}/listing/${item.slug}`
+                  : undefined
+              }
+              title={item.title}
+              text={item.summary ?? undefined}
+              className="h-7 w-7 rounded-full bg-black/30 p-0 text-white drop-shadow hover:bg-black/50 hover:text-white active:scale-90"
+              buttonStyle={{ color: 'white' }}
+              ariaLabel={t('share.label', 'Share')}
+            />
+          </div>
         </div>
 
         {/* ── Card body ── */}

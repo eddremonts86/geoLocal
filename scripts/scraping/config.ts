@@ -58,6 +58,14 @@ export const SCRAPE_TARGETS = {
     /** LinkedIn Services Marketplace — service provider profiles */
     servicesMarketplace: 'https://www.linkedin.com/services/search/?keywords=freelance&location=Denmark',
   },
+  bilbasen: {
+    /** Bilbasen used-car search — 30 items per JSON-LD ItemList page */
+    search: 'https://www.bilbasen.dk/brugt/bil',
+  },
+  dba: {
+    /** DBA used-car search (section with the richest JSON-LD coverage) */
+    cars: 'https://www.dba.dk/mobility/search/car?registration_class=1',
+  },
 } as const
 
 // Realistic user-agent pool to rotate
