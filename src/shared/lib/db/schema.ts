@@ -3,6 +3,7 @@ import {
   text,
   timestamp,
   integer,
+  bigserial,
   boolean,
   pgEnum,
   doublePrecision,
@@ -239,6 +240,16 @@ export const listings = pgTable(
     ownerId: text('owner_id').references(() => users.id, { onDelete: 'set null' }),
     scrapedSource: varchar('scraped_source', { length: 50 }),
     scrapedSourceUrl: text('scraped_source_url'),
+    sourceKind: varchar('source_kind', { length: 20 }).notNull().default('user'),
+    visibility: varchar('visibility', { length: 20 }).notNull().default('public'),
+    contactMethod: varchar('contact_method', { length: 20 }).notNull().default('in_app'),
+    contactEmail: text('contact_email'),
+    contactPhone: text('contact_phone'),
+    contactUrl: text('contact_url'),
+    moderationStatus: varchar('moderation_status', { length: 20 }).notNull().default('ok'),
+    moderationNote: text('moderation_note'),
+    viewCount: integer('view_count').notNull().default(0),
+    contactCount: integer('contact_count').notNull().default(0),
     publishedAt: timestamp('published_at'),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -251,6 +262,9 @@ export const listings = pgTable(
     index('idx_listings_price').on(table.price),
     index('idx_listings_coords').on(table.latitude, table.longitude),
     index('idx_listings_featured').on(table.featured),
+    index('idx_listings_owner').on(table.ownerId),
+    index('idx_listings_moderation').on(table.moderationStatus),
+    index('idx_listings_source_kind').on(table.sourceKind),
   ],
 )
 
@@ -448,4 +462,208 @@ export const scrapedSourceCandidates = pgTable(
     notes: text('notes'),
   },
   (table) => [index('idx_scraped_source_candidates_status').on(table.status)],
+)
+
+// ─── User profiles (Clerk-keyed marketplace metadata) ─────────────────────────
+// Identity is owned by Clerk; this table holds marketplace-domain extras.
+// PK is the Clerk userId returned by `auth().userId` (no FK to `users`).
+
+export const userProfiles = pgTable(
+  'user_profiles',
+  {
+    userId: text('user_id').primaryKey(),
+    handle: varchar('handle', { length: 40 }).unique(),
+    displayName: text('display_name'),
+    bio: text('bio'),
+    avatarUrl: text('avatar_url'),
+    email: text('email'),
+    phone: text('phone'),
+    phoneVerified: boolean('phone_verified').notNull().default(false),
+    preferredLocale: varchar('preferred_locale', { length: 5 }).notNull().default('en'),
+    notificationsEmail: boolean('notifications_email').notNull().default(true),
+    role: varchar('role', { length: 20 }).notNull().default('user'),
+    bannedAt: timestamp('banned_at'),
+    bannedReason: text('banned_reason'),
+    stripeAccountId: text('stripe_account_id').unique(),
+    stripeChargesEnabled: boolean('stripe_charges_enabled').notNull().default(false),
+    stripePayoutsEnabled: boolean('stripe_payouts_enabled').notNull().default(false),
+    stripeDetailsSubmitted: boolean('stripe_details_submitted').notNull().default(false),
+    stripeCustomerId: text('stripe_customer_id').unique(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (t) => [
+    index('idx_user_profiles_handle').on(t.handle),
+    index('idx_user_profiles_role').on(t.role),
+    index('idx_user_profiles_banned').on(t.bannedAt),
+  ],
+)
+
+// ─── Messaging ────────────────────────────────────────────────────────────────
+
+export const threads = pgTable(
+  'threads',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    listingId: uuid('listing_id').references(() => listings.id, { onDelete: 'set null' }),
+    subject: text('subject'),
+    status: varchar('status', { length: 20 }).notNull().default('open'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    lastMessageAt: timestamp('last_message_at').notNull().defaultNow(),
+  },
+  (t) => [
+    index('idx_threads_listing').on(t.listingId),
+    index('idx_threads_last_message').on(t.lastMessageAt),
+  ],
+)
+
+export const threadParticipants = pgTable(
+  'thread_participants',
+  {
+    threadId: uuid('thread_id').notNull().references(() => threads.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull(),
+    role: varchar('role', { length: 20 }).notNull(),
+    joinedAt: timestamp('joined_at').notNull().defaultNow(),
+    lastReadAt: timestamp('last_read_at'),
+    muted: boolean('muted').notNull().default(false),
+  },
+  (t) => [
+    primaryKey({ columns: [t.threadId, t.userId] }),
+    index('idx_thread_participants_user').on(t.userId),
+  ],
+)
+
+export const messages = pgTable(
+  'messages',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    threadId: uuid('thread_id').notNull().references(() => threads.id, { onDelete: 'cascade' }),
+    senderId: text('sender_id').notNull(),
+    body: text('body').notNull(),
+    bodyFormat: varchar('body_format', { length: 10 }).notNull().default('plain'),
+    attachments: jsonb('attachments'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    editedAt: timestamp('edited_at'),
+    deletedAt: timestamp('deleted_at'),
+  },
+  (t) => [
+    index('idx_messages_thread_created').on(t.threadId, t.createdAt),
+    index('idx_messages_sender').on(t.senderId),
+  ],
+)
+
+export const notifications = pgTable(
+  'notifications',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: text('user_id').notNull(),
+    kind: varchar('kind', { length: 40 }).notNull(),
+    payload: jsonb('payload').notNull(),
+    readAt: timestamp('read_at'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    index('idx_notifications_user_unread').on(t.userId, t.readAt),
+    index('idx_notifications_user_created').on(t.userId, t.createdAt),
+  ],
+)
+
+// ─── Reports & rate limits ────────────────────────────────────────────────────
+
+export const listingReports = pgTable(
+  'listing_reports',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    listingId: uuid('listing_id').notNull().references(() => listings.id, { onDelete: 'cascade' }),
+    reporterId: text('reporter_id'),
+    reason: varchar('reason', { length: 40 }).notNull(),
+    details: text('details'),
+    resolvedAt: timestamp('resolved_at'),
+    resolvedBy: text('resolved_by'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    index('idx_listing_reports_listing').on(t.listingId),
+    index('idx_listing_reports_resolved').on(t.resolvedAt),
+  ],
+)
+
+export const rateLimitBuckets = pgTable(
+  'rate_limit_buckets',
+  {
+    bucketKey: text('bucket_key').notNull(),
+    windowStart: timestamp('window_start').notNull(),
+    count: integer('count').notNull().default(0),
+  },
+  (t) => [
+    primaryKey({ columns: [t.bucketKey, t.windowStart] }),
+    index('idx_rate_limit_buckets_window').on(t.windowStart),
+  ],
+)
+
+// ─── Payments — Stripe Connect ────────────────────────────────────────────────
+
+export const payments = pgTable(
+  'payments',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    listingId: uuid('listing_id').references(() => listings.id, { onDelete: 'set null' }),
+    threadId: uuid('thread_id').references(() => threads.id, { onDelete: 'set null' }),
+    buyerId: text('buyer_id').notNull(),
+    sellerId: text('seller_id').notNull(),
+    amountTotal: integer('amount_total').notNull(),
+    amountApplicationFee: integer('amount_application_fee').notNull().default(0),
+    currency: varchar('currency', { length: 3 }).notNull().default('DKK'),
+    status: varchar('status', { length: 30 }).notNull().default('requires_payment_method'),
+    intent: varchar('intent', { length: 20 }).notNull().default('sale'),
+    description: text('description'),
+    metadata: jsonb('metadata'),
+    stripePaymentIntentId: text('stripe_payment_intent_id').unique(),
+    stripeChargeId: text('stripe_charge_id'),
+    stripeTransferId: text('stripe_transfer_id'),
+    stripeRefundId: text('stripe_refund_id'),
+    clientSecret: text('client_secret'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+    paidAt: timestamp('paid_at'),
+    refundedAt: timestamp('refunded_at'),
+    failedAt: timestamp('failed_at'),
+  },
+  (t) => [
+    index('idx_payments_buyer').on(t.buyerId),
+    index('idx_payments_seller').on(t.sellerId),
+    index('idx_payments_listing').on(t.listingId),
+    index('idx_payments_status').on(t.status),
+  ],
+)
+
+export const stripeEvents = pgTable(
+  'stripe_events',
+  {
+    id: text('id').primaryKey(),
+    type: varchar('type', { length: 80 }).notNull(),
+    payload: jsonb('payload').notNull(),
+    processedAt: timestamp('processed_at'),
+    error: text('error'),
+    receivedAt: timestamp('received_at').notNull().defaultNow(),
+  },
+  (t) => [
+    index('idx_stripe_events_type').on(t.type),
+    index('idx_stripe_events_processed').on(t.processedAt),
+  ],
+)
+
+// ─── Listing analytics ────────────────────────────────────────────────────────
+
+export const listingViews = pgTable(
+  'listing_views',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    listingId: uuid('listing_id').notNull().references(() => listings.id, { onDelete: 'cascade' }),
+    viewerId: text('viewer_id'),
+    ipHash: varchar('ip_hash', { length: 64 }),
+    referrer: text('referrer'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (t) => [index('idx_listing_views_listing').on(t.listingId, t.createdAt)],
 )

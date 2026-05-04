@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as PublicRouteRouteImport } from './routes/_public/route'
 import { Route as AdminRouteRouteImport } from './routes/_admin/route'
+import { Route as AccountRouteRouteImport } from './routes/_account/route'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as PublicTermsRouteImport } from './routes/_public/terms'
 import { Route as PublicPrivacyRouteImport } from './routes/_public/privacy'
@@ -23,13 +24,26 @@ import { Route as PublicCookiesRouteImport } from './routes/_public/cookies'
 import { Route as PublicContactRouteImport } from './routes/_public/contact'
 import { Route as PublicAboutRouteImport } from './routes/_public/about'
 import { Route as AdminAdminIndexRouteImport } from './routes/_admin/admin/index'
+import { Route as AccountAccountIndexRouteImport } from './routes/_account/account/index'
+import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
+import { Route as PublicUHandleRouteImport } from './routes/_public/u.$handle'
 import { Route as PublicListingSlugRouteImport } from './routes/_public/listing/$slug'
+import { Route as AdminAdminUsersRouteImport } from './routes/_admin/admin/users'
+import { Route as AdminAdminReportsRouteImport } from './routes/_admin/admin/reports'
 import { Route as AdminAdminLoginRouteImport } from './routes/_admin/admin/login'
+import { Route as AccountAccountProfileRouteImport } from './routes/_account/account/profile'
 import { Route as AdminAdminScrapingIndexRouteImport } from './routes/_admin/admin/scraping/index'
 import { Route as AdminAdminListingsIndexRouteImport } from './routes/_admin/admin/listings/index'
+import { Route as AccountAccountPaymentsIndexRouteImport } from './routes/_account/account/payments/index'
+import { Route as AccountAccountMessagesIndexRouteImport } from './routes/_account/account/messages/index'
+import { Route as AccountAccountListingsIndexRouteImport } from './routes/_account/account/listings/index'
 import { Route as AdminAdminScrapingSourcesRouteImport } from './routes/_admin/admin/scraping/sources'
 import { Route as AdminAdminListingsNewRouteImport } from './routes/_admin/admin/listings/new'
 import { Route as AdminAdminListingsIdRouteImport } from './routes/_admin/admin/listings/$id'
+import { Route as AccountAccountPaymentsOnboardingRouteImport } from './routes/_account/account/payments/onboarding'
+import { Route as AccountAccountMessagesThreadIdRouteImport } from './routes/_account/account/messages/$threadId'
+import { Route as AccountAccountListingsNewRouteImport } from './routes/_account/account/listings/new'
+import { Route as AccountAccountListingsIdRouteImport } from './routes/_account/account/listings/$id'
 
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
@@ -42,6 +56,10 @@ const PublicRouteRoute = PublicRouteRouteImport.update({
 } as any)
 const AdminRouteRoute = AdminRouteRouteImport.update({
   id: '/_admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountRouteRoute = AccountRouteRouteImport.update({
+  id: '/_account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PublicIndexRoute = PublicIndexRouteImport.update({
@@ -99,15 +117,45 @@ const AdminAdminIndexRoute = AdminAdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AccountAccountIndexRoute = AccountAccountIndexRouteImport.update({
+  id: '/account/',
+  path: '/account/',
+  getParentRoute: () => AccountRouteRoute,
+} as any)
+const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
+  id: '/api/stripe/webhook',
+  path: '/api/stripe/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PublicUHandleRoute = PublicUHandleRouteImport.update({
+  id: '/u/$handle',
+  path: '/u/$handle',
+  getParentRoute: () => PublicRouteRoute,
+} as any)
 const PublicListingSlugRoute = PublicListingSlugRouteImport.update({
   id: '/listing/$slug',
   path: '/listing/$slug',
   getParentRoute: () => PublicRouteRoute,
 } as any)
+const AdminAdminUsersRoute = AdminAdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminAdminReportsRoute = AdminAdminReportsRouteImport.update({
+  id: '/admin/reports',
+  path: '/admin/reports',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminAdminLoginRoute = AdminAdminLoginRouteImport.update({
   id: '/admin/login',
   path: '/admin/login',
   getParentRoute: () => AdminRouteRoute,
+} as any)
+const AccountAccountProfileRoute = AccountAccountProfileRouteImport.update({
+  id: '/account/profile',
+  path: '/account/profile',
+  getParentRoute: () => AccountRouteRoute,
 } as any)
 const AdminAdminScrapingIndexRoute = AdminAdminScrapingIndexRouteImport.update({
   id: '/admin/scraping/',
@@ -119,6 +167,24 @@ const AdminAdminListingsIndexRoute = AdminAdminListingsIndexRouteImport.update({
   path: '/admin/listings/',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AccountAccountPaymentsIndexRoute =
+  AccountAccountPaymentsIndexRouteImport.update({
+    id: '/account/payments/',
+    path: '/account/payments/',
+    getParentRoute: () => AccountRouteRoute,
+  } as any)
+const AccountAccountMessagesIndexRoute =
+  AccountAccountMessagesIndexRouteImport.update({
+    id: '/account/messages/',
+    path: '/account/messages/',
+    getParentRoute: () => AccountRouteRoute,
+  } as any)
+const AccountAccountListingsIndexRoute =
+  AccountAccountListingsIndexRouteImport.update({
+    id: '/account/listings/',
+    path: '/account/listings/',
+    getParentRoute: () => AccountRouteRoute,
+  } as any)
 const AdminAdminScrapingSourcesRoute =
   AdminAdminScrapingSourcesRouteImport.update({
     id: '/admin/scraping/sources',
@@ -135,6 +201,30 @@ const AdminAdminListingsIdRoute = AdminAdminListingsIdRouteImport.update({
   path: '/admin/listings/$id',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AccountAccountPaymentsOnboardingRoute =
+  AccountAccountPaymentsOnboardingRouteImport.update({
+    id: '/account/payments/onboarding',
+    path: '/account/payments/onboarding',
+    getParentRoute: () => AccountRouteRoute,
+  } as any)
+const AccountAccountMessagesThreadIdRoute =
+  AccountAccountMessagesThreadIdRouteImport.update({
+    id: '/account/messages/$threadId',
+    path: '/account/messages/$threadId',
+    getParentRoute: () => AccountRouteRoute,
+  } as any)
+const AccountAccountListingsNewRoute =
+  AccountAccountListingsNewRouteImport.update({
+    id: '/account/listings/new',
+    path: '/account/listings/new',
+    getParentRoute: () => AccountRouteRoute,
+  } as any)
+const AccountAccountListingsIdRoute =
+  AccountAccountListingsIdRouteImport.update({
+    id: '/account/listings/$id',
+    path: '/account/listings/$id',
+    getParentRoute: () => AccountRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
@@ -148,12 +238,25 @@ export interface FileRoutesByFullPath {
   '/press': typeof PublicPressRoute
   '/privacy': typeof PublicPrivacyRoute
   '/terms': typeof PublicTermsRoute
+  '/account/profile': typeof AccountAccountProfileRoute
   '/admin/login': typeof AdminAdminLoginRoute
+  '/admin/reports': typeof AdminAdminReportsRoute
+  '/admin/users': typeof AdminAdminUsersRoute
   '/listing/$slug': typeof PublicListingSlugRoute
+  '/u/$handle': typeof PublicUHandleRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/account/': typeof AccountAccountIndexRoute
   '/admin/': typeof AdminAdminIndexRoute
+  '/account/listings/$id': typeof AccountAccountListingsIdRoute
+  '/account/listings/new': typeof AccountAccountListingsNewRoute
+  '/account/messages/$threadId': typeof AccountAccountMessagesThreadIdRoute
+  '/account/payments/onboarding': typeof AccountAccountPaymentsOnboardingRoute
   '/admin/listings/$id': typeof AdminAdminListingsIdRoute
   '/admin/listings/new': typeof AdminAdminListingsNewRoute
   '/admin/scraping/sources': typeof AdminAdminScrapingSourcesRoute
+  '/account/listings/': typeof AccountAccountListingsIndexRoute
+  '/account/messages/': typeof AccountAccountMessagesIndexRoute
+  '/account/payments/': typeof AccountAccountPaymentsIndexRoute
   '/admin/listings/': typeof AdminAdminListingsIndexRoute
   '/admin/scraping/': typeof AdminAdminScrapingIndexRoute
 }
@@ -169,17 +272,31 @@ export interface FileRoutesByTo {
   '/press': typeof PublicPressRoute
   '/privacy': typeof PublicPrivacyRoute
   '/terms': typeof PublicTermsRoute
+  '/account/profile': typeof AccountAccountProfileRoute
   '/admin/login': typeof AdminAdminLoginRoute
+  '/admin/reports': typeof AdminAdminReportsRoute
+  '/admin/users': typeof AdminAdminUsersRoute
   '/listing/$slug': typeof PublicListingSlugRoute
+  '/u/$handle': typeof PublicUHandleRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/account': typeof AccountAccountIndexRoute
   '/admin': typeof AdminAdminIndexRoute
+  '/account/listings/$id': typeof AccountAccountListingsIdRoute
+  '/account/listings/new': typeof AccountAccountListingsNewRoute
+  '/account/messages/$threadId': typeof AccountAccountMessagesThreadIdRoute
+  '/account/payments/onboarding': typeof AccountAccountPaymentsOnboardingRoute
   '/admin/listings/$id': typeof AdminAdminListingsIdRoute
   '/admin/listings/new': typeof AdminAdminListingsNewRoute
   '/admin/scraping/sources': typeof AdminAdminScrapingSourcesRoute
+  '/account/listings': typeof AccountAccountListingsIndexRoute
+  '/account/messages': typeof AccountAccountMessagesIndexRoute
+  '/account/payments': typeof AccountAccountPaymentsIndexRoute
   '/admin/listings': typeof AdminAdminListingsIndexRoute
   '/admin/scraping': typeof AdminAdminScrapingIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/_account': typeof AccountRouteRouteWithChildren
   '/_admin': typeof AdminRouteRouteWithChildren
   '/_public': typeof PublicRouteRouteWithChildren
   '/sign-in': typeof SignInRoute
@@ -193,12 +310,25 @@ export interface FileRoutesById {
   '/_public/privacy': typeof PublicPrivacyRoute
   '/_public/terms': typeof PublicTermsRoute
   '/_public/': typeof PublicIndexRoute
+  '/_account/account/profile': typeof AccountAccountProfileRoute
   '/_admin/admin/login': typeof AdminAdminLoginRoute
+  '/_admin/admin/reports': typeof AdminAdminReportsRoute
+  '/_admin/admin/users': typeof AdminAdminUsersRoute
   '/_public/listing/$slug': typeof PublicListingSlugRoute
+  '/_public/u/$handle': typeof PublicUHandleRoute
+  '/api/stripe/webhook': typeof ApiStripeWebhookRoute
+  '/_account/account/': typeof AccountAccountIndexRoute
   '/_admin/admin/': typeof AdminAdminIndexRoute
+  '/_account/account/listings/$id': typeof AccountAccountListingsIdRoute
+  '/_account/account/listings/new': typeof AccountAccountListingsNewRoute
+  '/_account/account/messages/$threadId': typeof AccountAccountMessagesThreadIdRoute
+  '/_account/account/payments/onboarding': typeof AccountAccountPaymentsOnboardingRoute
   '/_admin/admin/listings/$id': typeof AdminAdminListingsIdRoute
   '/_admin/admin/listings/new': typeof AdminAdminListingsNewRoute
   '/_admin/admin/scraping/sources': typeof AdminAdminScrapingSourcesRoute
+  '/_account/account/listings/': typeof AccountAccountListingsIndexRoute
+  '/_account/account/messages/': typeof AccountAccountMessagesIndexRoute
+  '/_account/account/payments/': typeof AccountAccountPaymentsIndexRoute
   '/_admin/admin/listings/': typeof AdminAdminListingsIndexRoute
   '/_admin/admin/scraping/': typeof AdminAdminScrapingIndexRoute
 }
@@ -216,12 +346,25 @@ export interface FileRouteTypes {
     | '/press'
     | '/privacy'
     | '/terms'
+    | '/account/profile'
     | '/admin/login'
+    | '/admin/reports'
+    | '/admin/users'
     | '/listing/$slug'
+    | '/u/$handle'
+    | '/api/stripe/webhook'
+    | '/account/'
     | '/admin/'
+    | '/account/listings/$id'
+    | '/account/listings/new'
+    | '/account/messages/$threadId'
+    | '/account/payments/onboarding'
     | '/admin/listings/$id'
     | '/admin/listings/new'
     | '/admin/scraping/sources'
+    | '/account/listings/'
+    | '/account/messages/'
+    | '/account/payments/'
     | '/admin/listings/'
     | '/admin/scraping/'
   fileRoutesByTo: FileRoutesByTo
@@ -237,16 +380,30 @@ export interface FileRouteTypes {
     | '/press'
     | '/privacy'
     | '/terms'
+    | '/account/profile'
     | '/admin/login'
+    | '/admin/reports'
+    | '/admin/users'
     | '/listing/$slug'
+    | '/u/$handle'
+    | '/api/stripe/webhook'
+    | '/account'
     | '/admin'
+    | '/account/listings/$id'
+    | '/account/listings/new'
+    | '/account/messages/$threadId'
+    | '/account/payments/onboarding'
     | '/admin/listings/$id'
     | '/admin/listings/new'
     | '/admin/scraping/sources'
+    | '/account/listings'
+    | '/account/messages'
+    | '/account/payments'
     | '/admin/listings'
     | '/admin/scraping'
   id:
     | '__root__'
+    | '/_account'
     | '/_admin'
     | '/_public'
     | '/sign-in'
@@ -260,20 +417,35 @@ export interface FileRouteTypes {
     | '/_public/privacy'
     | '/_public/terms'
     | '/_public/'
+    | '/_account/account/profile'
     | '/_admin/admin/login'
+    | '/_admin/admin/reports'
+    | '/_admin/admin/users'
     | '/_public/listing/$slug'
+    | '/_public/u/$handle'
+    | '/api/stripe/webhook'
+    | '/_account/account/'
     | '/_admin/admin/'
+    | '/_account/account/listings/$id'
+    | '/_account/account/listings/new'
+    | '/_account/account/messages/$threadId'
+    | '/_account/account/payments/onboarding'
     | '/_admin/admin/listings/$id'
     | '/_admin/admin/listings/new'
     | '/_admin/admin/scraping/sources'
+    | '/_account/account/listings/'
+    | '/_account/account/messages/'
+    | '/_account/account/payments/'
     | '/_admin/admin/listings/'
     | '/_admin/admin/scraping/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  AccountRouteRoute: typeof AccountRouteRouteWithChildren
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
   PublicRouteRoute: typeof PublicRouteRouteWithChildren
   SignInRoute: typeof SignInRoute
+  ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -297,6 +469,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AdminRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_account': {
+      id: '/_account'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AccountRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_public/': {
@@ -376,6 +555,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdminIndexRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/_account/account/': {
+      id: '/_account/account/'
+      path: '/account'
+      fullPath: '/account/'
+      preLoaderRoute: typeof AccountAccountIndexRouteImport
+      parentRoute: typeof AccountRouteRoute
+    }
+    '/api/stripe/webhook': {
+      id: '/api/stripe/webhook'
+      path: '/api/stripe/webhook'
+      fullPath: '/api/stripe/webhook'
+      preLoaderRoute: typeof ApiStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_public/u/$handle': {
+      id: '/_public/u/$handle'
+      path: '/u/$handle'
+      fullPath: '/u/$handle'
+      preLoaderRoute: typeof PublicUHandleRouteImport
+      parentRoute: typeof PublicRouteRoute
+    }
     '/_public/listing/$slug': {
       id: '/_public/listing/$slug'
       path: '/listing/$slug'
@@ -383,12 +583,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicListingSlugRouteImport
       parentRoute: typeof PublicRouteRoute
     }
+    '/_admin/admin/users': {
+      id: '/_admin/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminAdminUsersRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/_admin/admin/reports': {
+      id: '/_admin/admin/reports'
+      path: '/admin/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminAdminReportsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/_admin/admin/login': {
       id: '/_admin/admin/login'
       path: '/admin/login'
       fullPath: '/admin/login'
       preLoaderRoute: typeof AdminAdminLoginRouteImport
       parentRoute: typeof AdminRouteRoute
+    }
+    '/_account/account/profile': {
+      id: '/_account/account/profile'
+      path: '/account/profile'
+      fullPath: '/account/profile'
+      preLoaderRoute: typeof AccountAccountProfileRouteImport
+      parentRoute: typeof AccountRouteRoute
     }
     '/_admin/admin/scraping/': {
       id: '/_admin/admin/scraping/'
@@ -403,6 +624,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/listings/'
       preLoaderRoute: typeof AdminAdminListingsIndexRouteImport
       parentRoute: typeof AdminRouteRoute
+    }
+    '/_account/account/payments/': {
+      id: '/_account/account/payments/'
+      path: '/account/payments'
+      fullPath: '/account/payments/'
+      preLoaderRoute: typeof AccountAccountPaymentsIndexRouteImport
+      parentRoute: typeof AccountRouteRoute
+    }
+    '/_account/account/messages/': {
+      id: '/_account/account/messages/'
+      path: '/account/messages'
+      fullPath: '/account/messages/'
+      preLoaderRoute: typeof AccountAccountMessagesIndexRouteImport
+      parentRoute: typeof AccountRouteRoute
+    }
+    '/_account/account/listings/': {
+      id: '/_account/account/listings/'
+      path: '/account/listings'
+      fullPath: '/account/listings/'
+      preLoaderRoute: typeof AccountAccountListingsIndexRouteImport
+      parentRoute: typeof AccountRouteRoute
     }
     '/_admin/admin/scraping/sources': {
       id: '/_admin/admin/scraping/sources'
@@ -425,11 +667,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdminListingsIdRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/_account/account/payments/onboarding': {
+      id: '/_account/account/payments/onboarding'
+      path: '/account/payments/onboarding'
+      fullPath: '/account/payments/onboarding'
+      preLoaderRoute: typeof AccountAccountPaymentsOnboardingRouteImport
+      parentRoute: typeof AccountRouteRoute
+    }
+    '/_account/account/messages/$threadId': {
+      id: '/_account/account/messages/$threadId'
+      path: '/account/messages/$threadId'
+      fullPath: '/account/messages/$threadId'
+      preLoaderRoute: typeof AccountAccountMessagesThreadIdRouteImport
+      parentRoute: typeof AccountRouteRoute
+    }
+    '/_account/account/listings/new': {
+      id: '/_account/account/listings/new'
+      path: '/account/listings/new'
+      fullPath: '/account/listings/new'
+      preLoaderRoute: typeof AccountAccountListingsNewRouteImport
+      parentRoute: typeof AccountRouteRoute
+    }
+    '/_account/account/listings/$id': {
+      id: '/_account/account/listings/$id'
+      path: '/account/listings/$id'
+      fullPath: '/account/listings/$id'
+      preLoaderRoute: typeof AccountAccountListingsIdRouteImport
+      parentRoute: typeof AccountRouteRoute
+    }
   }
 }
 
+interface AccountRouteRouteChildren {
+  AccountAccountProfileRoute: typeof AccountAccountProfileRoute
+  AccountAccountIndexRoute: typeof AccountAccountIndexRoute
+  AccountAccountListingsIdRoute: typeof AccountAccountListingsIdRoute
+  AccountAccountListingsNewRoute: typeof AccountAccountListingsNewRoute
+  AccountAccountMessagesThreadIdRoute: typeof AccountAccountMessagesThreadIdRoute
+  AccountAccountPaymentsOnboardingRoute: typeof AccountAccountPaymentsOnboardingRoute
+  AccountAccountListingsIndexRoute: typeof AccountAccountListingsIndexRoute
+  AccountAccountMessagesIndexRoute: typeof AccountAccountMessagesIndexRoute
+  AccountAccountPaymentsIndexRoute: typeof AccountAccountPaymentsIndexRoute
+}
+
+const AccountRouteRouteChildren: AccountRouteRouteChildren = {
+  AccountAccountProfileRoute: AccountAccountProfileRoute,
+  AccountAccountIndexRoute: AccountAccountIndexRoute,
+  AccountAccountListingsIdRoute: AccountAccountListingsIdRoute,
+  AccountAccountListingsNewRoute: AccountAccountListingsNewRoute,
+  AccountAccountMessagesThreadIdRoute: AccountAccountMessagesThreadIdRoute,
+  AccountAccountPaymentsOnboardingRoute: AccountAccountPaymentsOnboardingRoute,
+  AccountAccountListingsIndexRoute: AccountAccountListingsIndexRoute,
+  AccountAccountMessagesIndexRoute: AccountAccountMessagesIndexRoute,
+  AccountAccountPaymentsIndexRoute: AccountAccountPaymentsIndexRoute,
+}
+
+const AccountRouteRouteWithChildren = AccountRouteRoute._addFileChildren(
+  AccountRouteRouteChildren,
+)
+
 interface AdminRouteRouteChildren {
   AdminAdminLoginRoute: typeof AdminAdminLoginRoute
+  AdminAdminReportsRoute: typeof AdminAdminReportsRoute
+  AdminAdminUsersRoute: typeof AdminAdminUsersRoute
   AdminAdminIndexRoute: typeof AdminAdminIndexRoute
   AdminAdminListingsIdRoute: typeof AdminAdminListingsIdRoute
   AdminAdminListingsNewRoute: typeof AdminAdminListingsNewRoute
@@ -440,6 +740,8 @@ interface AdminRouteRouteChildren {
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminAdminLoginRoute: AdminAdminLoginRoute,
+  AdminAdminReportsRoute: AdminAdminReportsRoute,
+  AdminAdminUsersRoute: AdminAdminUsersRoute,
   AdminAdminIndexRoute: AdminAdminIndexRoute,
   AdminAdminListingsIdRoute: AdminAdminListingsIdRoute,
   AdminAdminListingsNewRoute: AdminAdminListingsNewRoute,
@@ -464,6 +766,7 @@ interface PublicRouteRouteChildren {
   PublicTermsRoute: typeof PublicTermsRoute
   PublicIndexRoute: typeof PublicIndexRoute
   PublicListingSlugRoute: typeof PublicListingSlugRoute
+  PublicUHandleRoute: typeof PublicUHandleRoute
 }
 
 const PublicRouteRouteChildren: PublicRouteRouteChildren = {
@@ -478,6 +781,7 @@ const PublicRouteRouteChildren: PublicRouteRouteChildren = {
   PublicTermsRoute: PublicTermsRoute,
   PublicIndexRoute: PublicIndexRoute,
   PublicListingSlugRoute: PublicListingSlugRoute,
+  PublicUHandleRoute: PublicUHandleRoute,
 }
 
 const PublicRouteRouteWithChildren = PublicRouteRoute._addFileChildren(
@@ -485,9 +789,11 @@ const PublicRouteRouteWithChildren = PublicRouteRoute._addFileChildren(
 )
 
 const rootRouteChildren: RootRouteChildren = {
+  AccountRouteRoute: AccountRouteRouteWithChildren,
   AdminRouteRoute: AdminRouteRouteWithChildren,
   PublicRouteRoute: PublicRouteRouteWithChildren,
   SignInRoute: SignInRoute,
+  ApiStripeWebhookRoute: ApiStripeWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -27,6 +27,9 @@ import { ListingLocation } from '@/modules/listings/ui/ListingLocation'
 import { ListingSource } from '@/modules/listings/ui/ListingSource'
 import { ListingSimilar } from '@/modules/listings/ui/ListingSimilar'
 import { ShareMenu } from '@/modules/listings/ui/ShareMenu'
+import { ContactButton } from '@/modules/listings/ui/ContactButton'
+import { ReportButton } from '@/modules/listings/ui/ReportButton'
+import { StripeCheckoutButton } from '@/modules/listings/ui/StripeCheckoutButton'
 import { useFavorites } from '@/modules/favorites/ui/useFavorites'
 
 interface ListingDetailPageProps {
@@ -229,14 +232,33 @@ export function ListingDetailPage({ slug }: ListingDetailPageProps) {
                 )}
               </p>
               <div className="hidden space-y-2 md:block">
-                <Button
-                  onClick={() => setContactOpen(true)}
-                  className="h-auto w-full rounded-none bg-foreground px-6 py-4 text-sm font-medium text-background hover:bg-(--amber) hover:text-(--surface-0)"
-                >
-                  {listing.category === 'service'
-                    ? t('listing.requestService', 'Request service')
-                    : t('listing.contact', 'Contact seller')}
-                </Button>
+                {/*
+                 * Marketplace flow: when the listing belongs to a user and the
+                 * owner chose in-app messaging, route the contact CTA through
+                 * the real `startThreadFn` server fn (Phase 2). Otherwise fall
+                 * back to the legacy mock dialog.
+                 */}
+                {listing.sourceKind === 'user' && listing.contactMethod === 'in_app' && listing.ownerId ? (
+                  <ContactButton
+                    listingId={listing.id}
+                    ownerId={listing.ownerId}
+                    label={
+                      listing.category === 'service'
+                        ? t('listing.requestService', 'Request service')
+                        : t('listing.contact', 'Contact seller')
+                    }
+                    className="h-auto w-full rounded-none bg-foreground px-6 py-4 text-sm font-medium text-background hover:bg-(--amber) hover:text-(--surface-0)"
+                  />
+                ) : (
+                  <Button
+                    onClick={() => setContactOpen(true)}
+                    className="h-auto w-full rounded-none bg-foreground px-6 py-4 text-sm font-medium text-background hover:bg-(--amber) hover:text-(--surface-0)"
+                  >
+                    {listing.category === 'service'
+                      ? t('listing.requestService', 'Request service')
+                      : t('listing.contact', 'Contact seller')}
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   onClick={() => setBookingOpen(true)}
@@ -244,6 +266,24 @@ export function ListingDetailPage({ slug }: ListingDetailPageProps) {
                 >
                   {t('listing.bookTour', 'Book a tour')}
                 </Button>
+                {listing.sourceKind === 'user' && listing.ownerId && listing.price >= 0.5 ? (
+                  <StripeCheckoutButton
+                    listingId={listing.id}
+                    amount={Math.round(listing.price * 100)}
+                    currency={listing.currency || 'DKK'}
+                    intent={
+                      listing.category === 'service'
+                        ? 'service'
+                        : listing.category === 'experience'
+                          ? 'booking'
+                          : 'sale'
+                    }
+                    label={t('listing.buyNow', 'Pay securely · {{price}} {{currency}}', {
+                      price: listing.price.toLocaleString(),
+                      currency: listing.currency || 'DKK',
+                    })}
+                  />
+                ) : null}
               </div>
             </div>
 
@@ -270,6 +310,9 @@ export function ListingDetailPage({ slug }: ListingDetailPageProps) {
                     : '—'}
                 </span>
               </p>
+              <div className="mt-3">
+                <ReportButton listingId={listing.id} />
+              </div>
             </div>
           </div>
         </m.aside>
@@ -298,14 +341,27 @@ export function ListingDetailPage({ slug }: ListingDetailPageProps) {
 
       {/* ─── Mobile sticky CTA bar ────────────────────────────────── */}
       <div className="fixed bottom-0 left-0 right-0 z-40 flex gap-2 border-t border-border bg-background/95 p-4 backdrop-blur-sm md:hidden">
-        <Button
-          onClick={() => setContactOpen(true)}
-          className="h-auto flex-1 rounded-none bg-foreground py-3.5 text-sm font-medium text-background active:opacity-80"
-        >
-          {listing.category === 'service'
-            ? t('listing.requestService', 'Request service')
-            : t('listing.contact', 'Contact seller')}
-        </Button>
+        {listing.sourceKind === 'user' && listing.contactMethod === 'in_app' && listing.ownerId ? (
+          <ContactButton
+            listingId={listing.id}
+            ownerId={listing.ownerId}
+            label={
+              listing.category === 'service'
+                ? t('listing.requestService', 'Request service')
+                : t('listing.contact', 'Contact seller')
+            }
+            className="h-auto flex-1 rounded-none bg-foreground py-3.5 text-sm font-medium text-background active:opacity-80"
+          />
+        ) : (
+          <Button
+            onClick={() => setContactOpen(true)}
+            className="h-auto flex-1 rounded-none bg-foreground py-3.5 text-sm font-medium text-background active:opacity-80"
+          >
+            {listing.category === 'service'
+              ? t('listing.requestService', 'Request service')
+              : t('listing.contact', 'Contact seller')}
+          </Button>
+        )}
         <Button
           variant="outline"
           onClick={() => setBookingOpen(true)}

@@ -1,0 +1,1 @@
+import{c as e,t}from"./jsx-runtime-DUA5mYKi.js";import{r as n}from"./index-DzOPAxpE.js";import{t as r}from"./ListingFormPage-ZMajdqMH.js";var i=e(t());function a(){let{category:e}=n.useSearch();return(0,i.jsx)(r,{initialCategory:e})}export{a as component};

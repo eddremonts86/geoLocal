@@ -1,1 +1,0 @@
-import{l as e,n as t}from"./react-dom-T69vw8w8.js";import{t as n}from"./index-gHY22wMF.js";import{t as r}from"./ListingFormPage-C60WYXr0.js";var i=e(t());function a(){let{category:e}=n.useSearch();return(0,i.jsx)(r,{initialCategory:e})}export{a as component};

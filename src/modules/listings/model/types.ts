@@ -108,6 +108,14 @@ export interface ListingDetail extends ListingBase {
   assets: ListingAsset[]
   publishedAt: string | null
   createdAt: string
+  // Marketplace / multi-tenant fields
+  ownerId?: string | null
+  sourceKind?: 'user' | 'scraped' | null
+  contactMethod?: 'in_app' | 'email' | 'phone' | 'external_url' | null
+  contactEmail?: string | null
+  contactPhone?: string | null
+  contactUrl?: string | null
+  moderationStatus?: 'ok' | 'flagged' | 'hidden' | 'banned' | null
   // Property fields
   bedrooms?: number | null
   bathrooms?: number | null
@@ -163,19 +171,39 @@ export interface ListingSearchFilters {
   nearRadiusKm?: number
   /** Encoded polygon ring: `lng1,lat1_lng2,lat2_...`. */
   polygon?: string
+  // Source provenance
+  sourceKind?: 'user' | 'scraped'
+  scrapedSource?: string[]
   // Property-specific
   bedrooms?: (number | 'studio')[]
   bathrooms?: number
   areaMin?: number
   areaMax?: number
+  yearBuiltMin?: number
+  yearBuiltMax?: number
+  parkingMin?: number
+  furnished?: boolean
   // Vehicle-specific
   make?: string[]
   yearMin?: number
   yearMax?: number
   fuelType?: FuelType[]
   transmission?: TransmissionType
+  mileageMax?: number
+  doorsMin?: number
+  colors?: string[]
   // Service-specific
   experienceMin?: number
+  serviceRadiusMin?: number
+  responseTime?: 'within_hour' | 'same_day' | 'few_days'
+  certified?: boolean
+  // Experience-specific
+  durationMin?: number
+  durationMax?: number
+  groupMax?: number
+  minAgeMax?: number
+  languages?: string[]
+  difficulty?: 'easy' | 'moderate' | 'hard'
 }
 
 export interface ListingSearchResult {

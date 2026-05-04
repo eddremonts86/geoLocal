@@ -29,7 +29,14 @@ export function HomeSearchBar() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    navigate({ to: '/explore' })
+    const trimmed = query.trim()
+    // Build URL search params that match exploreParsers in
+    // `@/modules/explore/state/search-params`. `all` is the absence of a
+    // `category` filter, and an empty `q` should not be persisted in the URL.
+    const search: Record<string, string> = {}
+    if (category !== 'all') search.category = category
+    if (trimmed.length > 0) search.q = trimmed
+    navigate({ to: '/explore', search: search as never })
   }
 
   return (

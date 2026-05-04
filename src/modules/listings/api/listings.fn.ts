@@ -40,19 +40,39 @@ const searchInputSchema = z.object({
   nearLng: z.number().optional(),
   nearRadiusKm: z.number().min(0.1).max(500).optional(),
   polygon: z.string().optional(),
+  // Source provenance (common)
+  sourceKind: z.enum(['user', 'scraped']).optional(),
+  scrapedSource: z.array(z.string()).optional(),
   // Property-specific
   bedrooms: z.array(z.union([z.number(), z.literal('studio')])).optional(),
   bathrooms: z.number().optional(),
   areaMin: z.number().optional(),
   areaMax: z.number().optional(),
+  yearBuiltMin: z.number().optional(),
+  yearBuiltMax: z.number().optional(),
+  parkingMin: z.number().optional(),
+  furnished: z.boolean().optional(),
   // Vehicle-specific
   make: z.array(z.string()).optional(),
   yearMin: z.number().optional(),
   yearMax: z.number().optional(),
   fuelType: z.array(z.enum(['gasoline', 'diesel', 'electric', 'hybrid'])).optional(),
   transmission: z.enum(['manual', 'automatic']).optional(),
+  mileageMax: z.number().optional(),
+  doorsMin: z.number().optional(),
+  colors: z.array(z.string()).optional(),
   // Service-specific
   experienceMin: z.number().optional(),
+  serviceRadiusMin: z.number().optional(),
+  responseTime: z.enum(['within_hour', 'same_day', 'few_days']).optional(),
+  certified: z.boolean().optional(),
+  // Experience-specific
+  durationMin: z.number().optional(),
+  durationMax: z.number().optional(),
+  groupMax: z.number().optional(),
+  minAgeMax: z.number().optional(),
+  languages: z.array(z.string()).optional(),
+  difficulty: z.enum(['easy', 'moderate', 'hard']).optional(),
 })
 
 export const searchListingsFn = createServerFn({ method: 'GET' })
@@ -67,6 +87,8 @@ export const searchListingsFn = createServerFn({ method: 'GET' })
     if (data.transactionType) conditions.push(eq(listings.transactionType, data.transactionType))
     if (data.priceMin != null) conditions.push(gte(listings.price, data.priceMin))
     if (data.priceMax != null) conditions.push(lte(listings.price, data.priceMax))
+    if (data.sourceKind) conditions.push(eq(listings.sourceKind, data.sourceKind))
+    if (data.scrapedSource?.length) conditions.push(inArray(listings.scrapedSource, data.scrapedSource))
 
     if (data.boundsNorth != null && data.boundsSouth != null && data.boundsEast != null && data.boundsWest != null) {
       conditions.push(gte(listings.latitude, data.boundsSouth))
@@ -180,6 +202,10 @@ export const searchListingsFn = createServerFn({ method: 'GET' })
         if (data.bathrooms != null && (p.bathrooms ?? 0) < data.bathrooms) include = false
         if (data.areaMin != null && (p.areaSqm ?? 0) < data.areaMin) include = false
         if (data.areaMax != null && (p.areaSqm ?? Infinity) > data.areaMax) include = false
+        if (data.yearBuiltMin != null && (p.yearBuilt ?? 0) < data.yearBuiltMin) include = false
+        if (data.yearBuiltMax != null && (p.yearBuilt ?? Infinity) > data.yearBuiltMax) include = false
+        if (data.parkingMin != null && (p.parkingSpaces ?? 0) < data.parkingMin) include = false
+        if (data.furnished === true && p.furnished !== true) include = false
         if (include) propExtMap.set(p.listingId, p)
       }
     }
@@ -193,6 +219,9 @@ export const searchListingsFn = createServerFn({ method: 'GET' })
         if (data.yearMax != null && v.year > data.yearMax) include = false
         if (data.fuelType?.length && v.fuelType && !data.fuelType.includes(v.fuelType)) include = false
         if (data.transmission && v.transmission && v.transmission !== data.transmission) include = false
+        if (data.mileageMax != null && (v.mileageKm ?? Infinity) > data.mileageMax) include = false
+        if (data.doorsMin != null && (v.doors ?? 0) < data.doorsMin) include = false
+        if (data.colors?.length && v.color && !data.colors.includes(v.color.toLowerCase())) include = false
         if (include) vehExtMap.set(v.listingId, v)
       }
     }
@@ -202,13 +231,28 @@ export const searchListingsFn = createServerFn({ method: 'GET' })
       for (const s of svcRows) {
         let include = true
         if (data.experienceMin != null && (s.experienceYears ?? 0) < data.experienceMin) include = false
+        if (data.serviceRadiusMin != null && (s.serviceRadiusKm ?? 0) < data.serviceRadiusMin) include = false
+        if (data.responseTime && s.responseTime !== data.responseTime) include = false
+        if (data.certified === true && !(s.certifications && s.certifications.length > 0)) include = false
         if (include) svcExtMap.set(s.listingId, s)
       }
     }
 
     if (experienceIds.length > 0) {
       const expRows = await db.select().from(listingExperiences).where(inArray(listingExperiences.listingId, experienceIds))
-      for (const e of expRows) expExtMap.set(e.listingId, e)
+      for (const e of expRows) {
+        let include = true
+        if (data.durationMin != null && (e.durationHours ?? 0) < data.durationMin) include = false
+        if (data.durationMax != null && (e.durationHours ?? Infinity) > data.durationMax) include = false
+        if (data.groupMax != null && (e.maxGuests ?? Infinity) > data.groupMax) include = false
+        if (data.minAgeMax != null && (e.minAge ?? 0) > data.minAgeMax) include = false
+        if (data.difficulty && e.difficulty && e.difficulty !== data.difficulty) include = false
+        if (data.languages?.length) {
+          const has = (e.languages ?? []).some((l) => data.languages!.includes(l))
+          if (!has) include = false
+        }
+        if (include) expExtMap.set(e.listingId, e)
+      }
     }
 
     // Build items, applying text search and extension filters
@@ -314,7 +358,15 @@ export const getListingBySlugFn = createServerFn({ method: 'GET' })
     const [listing] = await db
       .select()
       .from(listings)
-      .where(and(eq(listings.slug, data.slug), eq(listings.status, 'published')))
+      .where(
+        and(
+          eq(listings.slug, data.slug),
+          eq(listings.status, 'published'),
+          // Hide flagged / hidden / banned listings from the public route.
+          // `moderation_status` defaults to 'ok' so legacy rows pass through.
+          eq(listings.moderationStatus, 'ok'),
+        ),
+      )
       .limit(1)
 
     if (!listing) return null
@@ -381,6 +433,13 @@ export const getListingBySlugFn = createServerFn({ method: 'GET' })
       coverUrl: assets.find((a) => a.isCover)?.url ?? assets[0]?.url ?? null,
       scrapedSource: listing.scrapedSource ?? null,
       scrapedSourceUrl: listing.scrapedSourceUrl ?? null,
+      ownerId: listing.ownerId ?? null,
+      sourceKind: (listing.sourceKind as 'user' | 'scraped' | null) ?? null,
+      contactMethod: (listing.contactMethod as 'in_app' | 'email' | 'phone' | 'external_url' | null) ?? null,
+      contactEmail: listing.contactEmail ?? null,
+      contactPhone: listing.contactPhone ?? null,
+      contactUrl: listing.contactUrl ?? null,
+      moderationStatus: (listing.moderationStatus as 'ok' | 'flagged' | 'hidden' | 'banned' | null) ?? null,
       features: features.map((f) => f.featureCode),
       assets: assets.map((a) => ({
         id: a.id,
@@ -545,16 +604,39 @@ const mapMarkersInputSchema = z.object({
   transactionType: z.enum(['buy', 'rent', 'hire']).optional(),
   priceMin: z.number().optional(),
   priceMax: z.number().optional(),
+  // Source provenance
+  sourceKind: z.enum(['user', 'scraped']).optional(),
+  scrapedSource: z.array(z.string()).optional(),
+  // Property
   bedrooms: z.array(z.union([z.number(), z.literal('studio')])).optional(),
   bathrooms: z.number().optional(),
   areaMin: z.number().optional(),
   areaMax: z.number().optional(),
+  yearBuiltMin: z.number().optional(),
+  yearBuiltMax: z.number().optional(),
+  parkingMin: z.number().optional(),
+  furnished: z.boolean().optional(),
+  // Vehicle
   make: z.array(z.string()).optional(),
   yearMin: z.number().optional(),
   yearMax: z.number().optional(),
   fuelType: z.array(z.enum(['gasoline', 'diesel', 'electric', 'hybrid'])).optional(),
   transmission: z.enum(['manual', 'automatic']).optional(),
+  mileageMax: z.number().optional(),
+  doorsMin: z.number().optional(),
+  colors: z.array(z.string()).optional(),
+  // Service
   experienceMin: z.number().optional(),
+  serviceRadiusMin: z.number().optional(),
+  responseTime: z.enum(['within_hour', 'same_day', 'few_days']).optional(),
+  certified: z.boolean().optional(),
+  // Experience
+  durationMin: z.number().optional(),
+  durationMax: z.number().optional(),
+  groupMax: z.number().optional(),
+  minAgeMax: z.number().optional(),
+  languages: z.array(z.string()).optional(),
+  difficulty: z.enum(['easy', 'moderate', 'hard']).optional(),
   // Spatial area filters (same shape as searchListingsFn)
   nearLat: z.number().optional(),
   nearLng: z.number().optional(),
@@ -580,6 +662,8 @@ export const getMapMarkersFn = createServerFn({ method: 'GET' })
     if (data.transactionType) conditions.push(eq(listings.transactionType, data.transactionType))
     if (data.priceMin != null) conditions.push(gte(listings.price, data.priceMin))
     if (data.priceMax != null) conditions.push(lte(listings.price, data.priceMax))
+    if (data.sourceKind) conditions.push(eq(listings.sourceKind, data.sourceKind))
+    if (data.scrapedSource?.length) conditions.push(inArray(listings.scrapedSource, data.scrapedSource))
 
     // Spatial filters
     if (data.nearLat != null && data.nearLng != null && data.nearRadiusKm != null) {
@@ -613,10 +697,16 @@ export const getMapMarkersFn = createServerFn({ method: 'GET' })
 
     // Apply category-specific extension filters by fetching only matching ids
     const needsPropertyFilter =
-      data.bedrooms?.length || data.bathrooms != null || data.areaMin != null || data.areaMax != null
+      data.bedrooms?.length || data.bathrooms != null || data.areaMin != null || data.areaMax != null ||
+      data.yearBuiltMin != null || data.yearBuiltMax != null || data.parkingMin != null || data.furnished === true
     const needsVehicleFilter =
-      data.make?.length || data.yearMin != null || data.yearMax != null || data.fuelType?.length || data.transmission
-    const needsServiceFilter = data.experienceMin != null
+      data.make?.length || data.yearMin != null || data.yearMax != null || data.fuelType?.length || data.transmission ||
+      data.mileageMax != null || data.doorsMin != null || data.colors?.length
+    const needsServiceFilter =
+      data.experienceMin != null || data.serviceRadiusMin != null || data.responseTime || data.certified === true
+    const needsExperienceFilter =
+      data.durationMin != null || data.durationMax != null || data.groupMax != null || data.minAgeMax != null ||
+      data.difficulty || data.languages?.length
 
     const excluded = new Set<string>()
 
@@ -637,6 +727,10 @@ export const getMapMarkersFn = createServerFn({ method: 'GET' })
           if (data.bathrooms != null && (p.bathrooms ?? 0) < data.bathrooms) include = false
           if (data.areaMin != null && (p.areaSqm ?? 0) < data.areaMin) include = false
           if (data.areaMax != null && (p.areaSqm ?? Infinity) > data.areaMax) include = false
+          if (data.yearBuiltMin != null && (p.yearBuilt ?? 0) < data.yearBuiltMin) include = false
+          if (data.yearBuiltMax != null && (p.yearBuilt ?? Infinity) > data.yearBuiltMax) include = false
+          if (data.parkingMin != null && (p.parkingSpaces ?? 0) < data.parkingMin) include = false
+          if (data.furnished === true && p.furnished !== true) include = false
           if (include) keptIds.add(p.listingId)
         }
         for (const id of propertyIds) if (!keptIds.has(id)) excluded.add(id)
@@ -655,6 +749,9 @@ export const getMapMarkersFn = createServerFn({ method: 'GET' })
           if (data.yearMax != null && v.year > data.yearMax) include = false
           if (data.fuelType?.length && v.fuelType && !data.fuelType.includes(v.fuelType)) include = false
           if (data.transmission && v.transmission && v.transmission !== data.transmission) include = false
+          if (data.mileageMax != null && (v.mileageKm ?? Infinity) > data.mileageMax) include = false
+          if (data.doorsMin != null && (v.doors ?? 0) < data.doorsMin) include = false
+          if (data.colors?.length && v.color && !data.colors.includes(v.color.toLowerCase())) include = false
           if (include) keptIds.add(v.listingId)
         }
         for (const id of vehicleIds) if (!keptIds.has(id)) excluded.add(id)
@@ -667,10 +764,36 @@ export const getMapMarkersFn = createServerFn({ method: 'GET' })
         const svcRows = await db.select().from(listingServices).where(inArray(listingServices.listingId, serviceIds))
         const keptIds = new Set<string>()
         for (const s of svcRows) {
-          if (data.experienceMin != null && (s.experienceYears ?? 0) < data.experienceMin) continue
-          keptIds.add(s.listingId)
+          let include = true
+          if (data.experienceMin != null && (s.experienceYears ?? 0) < data.experienceMin) include = false
+          if (data.serviceRadiusMin != null && (s.serviceRadiusKm ?? 0) < data.serviceRadiusMin) include = false
+          if (data.responseTime && s.responseTime !== data.responseTime) include = false
+          if (data.certified === true && !(s.certifications && s.certifications.length > 0)) include = false
+          if (include) keptIds.add(s.listingId)
         }
         for (const id of serviceIds) if (!keptIds.has(id)) excluded.add(id)
+      }
+    }
+
+    if (needsExperienceFilter) {
+      const experienceIds = spatialRows.filter((r) => r.category === 'experience').map((r) => r.id)
+      if (experienceIds.length > 0) {
+        const expRows = await db.select().from(listingExperiences).where(inArray(listingExperiences.listingId, experienceIds))
+        const keptIds = new Set<string>()
+        for (const e of expRows) {
+          let include = true
+          if (data.durationMin != null && (e.durationHours ?? 0) < data.durationMin) include = false
+          if (data.durationMax != null && (e.durationHours ?? Infinity) > data.durationMax) include = false
+          if (data.groupMax != null && (e.maxGuests ?? Infinity) > data.groupMax) include = false
+          if (data.minAgeMax != null && (e.minAge ?? 0) > data.minAgeMax) include = false
+          if (data.difficulty && e.difficulty && e.difficulty !== data.difficulty) include = false
+          if (data.languages?.length) {
+            const has = (e.languages ?? []).some((l) => data.languages!.includes(l))
+            if (!has) include = false
+          }
+          if (include) keptIds.add(e.listingId)
+        }
+        for (const id of experienceIds) if (!keptIds.has(id)) excluded.add(id)
       }
     }
 

@@ -1,6 +1,6 @@
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Home, Car, Wrench, Sparkles, SlidersHorizontal, ArrowUpDown, X } from 'lucide-react'
+import { Home, Car, Wrench, Sparkles, SlidersHorizontal, ArrowUpDown, X, Search } from 'lucide-react'
 import { m, AnimatePresence } from 'framer-motion'
 import {
   DropdownMenu,
@@ -34,6 +34,9 @@ interface ExploreTopBarProps {
   total: number
   activeFilterCount: number
   onFiltersOpen: () => void
+  // Free-text search
+  query: string
+  onQueryChange: (v: string) => void
   // Active filter chips
   subCategory: string[] | null
   transactionType: TransactionType | null
@@ -127,6 +130,20 @@ export function ExploreTopBar(props: ExploreTopBarProps) {
   const categoryScrollRef = useRef<HTMLDivElement>(null)
   const chips = buildActiveChips(props)
 
+  // Local input state — debounced into the URL via `onQueryChange` so typing
+  // feels snappy and doesn't churn the router on every keystroke.
+  const [localQuery, setLocalQuery] = useState(props.query ?? '')
+  useEffect(() => {
+    // Sync down when the URL changes externally (e.g. category nav links).
+    setLocalQuery(props.query ?? '')
+  }, [props.query])
+  useEffect(() => {
+    if ((localQuery ?? '') === (props.query ?? '')) return
+    const id = setTimeout(() => props.onQueryChange(localQuery ?? ''), 250)
+    return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localQuery])
+
   return (
     <div className="shrink-0 border-b border-border bg-background">
       {/* Main row: categories + controls */}
@@ -156,6 +173,47 @@ export function ExploreTopBar(props: ExploreTopBarProps) {
 
         {/* Right side controls */}
         <div className="flex shrink-0 items-center gap-3 pl-3">
+          {/* Free-text search pill */}
+          <label
+            className="group flex h-8 w-36 items-center gap-2 rounded-full border border-border bg-background pl-3 pr-1 text-xs transition-colors focus-within:border-foreground hover:border-foreground md:w-56"
+            htmlFor="explore-search-input"
+          >
+            <Search
+              className="h-3.5 w-3.5 shrink-0 text-muted-foreground group-focus-within:text-foreground"
+              strokeWidth={1.75}
+              aria-hidden
+            />
+            <input
+              id="explore-search-input"
+              type="text"
+              value={localQuery ?? ''}
+              onChange={(e) => setLocalQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  setLocalQuery('')
+                  props.onQueryChange('')
+                  ;(e.target as HTMLInputElement).blur()
+                }
+              }}
+              placeholder={t('explore.searchPlaceholder', 'Search…')}
+              className="min-w-0 flex-1 bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+              aria-label={t('explore.searchAria', 'Search listings')}
+            />
+            {(localQuery?.length ?? 0) > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setLocalQuery('')
+                  props.onQueryChange('')
+                }}
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                aria-label={t('explore.clearSearch', 'Clear search')}
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
+          </label>
+
           {/* Result count */}
           <span className="font-mono text-xs tabular-nums text-muted-foreground">
             {props.total.toLocaleString()} {t('property.resultCount', 'results')}

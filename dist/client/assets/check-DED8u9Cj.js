@@ -1,1 +1,0 @@
-import{t as e}from"./createLucideIcon-dLwOd6HI.js";function t(e,[t,n]){return Math.min(n,Math.max(t,e))}var n=e(`check`,[[`path`,{d:`M20 6 9 17l-5-5`,key:`1gmf2c`}]]);export{t as n,n as t};

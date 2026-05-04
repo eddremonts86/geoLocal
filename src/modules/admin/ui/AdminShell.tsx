@@ -19,6 +19,8 @@ import {
   Car,
   Wrench,
   Sparkles,
+  Flag,
+  Users as UsersIcon,
 } from 'lucide-react'
 import { getAdminBadgesFn } from '@/modules/admin/api/admin-stats.fn'
 import {
@@ -68,6 +70,14 @@ const NAV_SECTIONS: Array<NavSection> = [
     items: [
       { label: 'Review queue', to: '/admin/scraping', icon: Inbox, badgeKey: 'pendingReview' },
       { label: 'Source candidates', to: '/admin/scraping/sources', icon: Globe, badgeKey: 'pendingSources' },
+    ],
+  },
+  {
+    label: 'Moderation',
+    number: '04',
+    items: [
+      { label: 'Reports', to: '/admin/reports', icon: Flag },
+      { label: 'Users', to: '/admin/users', icon: UsersIcon },
     ],
   },
 ]

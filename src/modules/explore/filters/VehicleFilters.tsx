@@ -11,12 +11,18 @@ interface VehicleFiltersProps {
   yearMax: number | null
   fuelType: FuelType[] | null
   transmission: TransmissionType | null
+  mileageMax: number | null
+  doorsMin: number | null
+  colors: string[] | null
   onSubCategoryChange: (val: string[] | null) => void
   onMakeChange: (makes: string[] | null) => void
   onYearMinChange: (val: number | null) => void
   onYearMaxChange: (val: number | null) => void
   onFuelTypeChange: (types: FuelType[] | null) => void
   onTransmissionChange: (val: TransmissionType | null) => void
+  onMileageMaxChange: (val: number | null) => void
+  onDoorsMinChange: (val: number | null) => void
+  onColorsChange: (val: string[] | null) => void
 }
 
 const FUEL_OPTIONS: { value: FuelType; label: string }[] = [
@@ -27,6 +33,17 @@ const FUEL_OPTIONS: { value: FuelType; label: string }[] = [
 ]
 
 const POPULAR_MAKES = ['Toyota', 'Volkswagen', 'BMW', 'Mercedes-Benz', 'Audi', 'Tesla', 'Ford', 'Hyundai', 'Volvo', 'Peugeot']
+
+const COLOR_OPTIONS: { value: string; label: string; swatch: string }[] = [
+  { value: 'black', label: 'Black', swatch: '#111' },
+  { value: 'white', label: 'White', swatch: '#f5f5f5' },
+  { value: 'silver', label: 'Silver', swatch: '#c0c0c0' },
+  { value: 'gray', label: 'Gray', swatch: '#666' },
+  { value: 'blue', label: 'Blue', swatch: '#1e40af' },
+  { value: 'red', label: 'Red', swatch: '#dc2626' },
+  { value: 'green', label: 'Green', swatch: '#16a34a' },
+  { value: 'beige', label: 'Beige', swatch: '#e7d3a4' },
+]
 
 const PILL_CLASS = 'rounded-full px-4 data-[state=on]:border-foreground data-[state=on]:bg-foreground data-[state=on]:text-background'
 
@@ -40,7 +57,10 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 export function VehicleFilters({
   subCategory, make, yearMin, yearMax, fuelType, transmission,
-  onSubCategoryChange, onMakeChange, onYearMinChange, onYearMaxChange, onFuelTypeChange, onTransmissionChange,
+  mileageMax, doorsMin, colors,
+  onSubCategoryChange, onMakeChange, onYearMinChange, onYearMaxChange,
+  onFuelTypeChange, onTransmissionChange,
+  onMileageMaxChange, onDoorsMinChange, onColorsChange,
 }: VehicleFiltersProps) {
   const { t } = useTranslation()
 
@@ -71,6 +91,16 @@ export function VehicleFilters({
       onFuelTypeChange(next.length ? next : null)
     } else {
       onFuelTypeChange([...current, f])
+    }
+  }
+
+  const toggleColor = (c: string) => {
+    const current = colors ?? []
+    if (current.includes(c)) {
+      const next = current.filter((x) => x !== c)
+      onColorsChange(next.length ? next : null)
+    } else {
+      onColorsChange([...current, c])
     }
   }
 
@@ -138,6 +168,24 @@ export function VehicleFilters({
         </div>
       </div>
 
+      {/* Mileage max */}
+      <div>
+        <SectionLabel>{t('filters.mileageMax', 'Max mileage (km)')}</SectionLabel>
+        <div className="flex flex-wrap gap-2">
+          {[50000, 100000, 150000, 200000].map((km) => (
+            <Toggle
+              key={km}
+              pressed={mileageMax === km}
+              onPressedChange={() => onMileageMaxChange(mileageMax === km ? null : km)}
+              variant="outline"
+              className={PILL_CLASS}
+            >
+              ≤ {km.toLocaleString()} km
+            </Toggle>
+          ))}
+        </div>
+      </div>
+
       {/* Fuel type */}
       <div>
         <SectionLabel>{t('filters.fuelType', 'Fuel Type')}</SectionLabel>
@@ -169,6 +217,47 @@ export function VehicleFilters({
               className={PILL_CLASS}
             >
               {val === 'manual' ? t('filters.manual', 'Manual') : t('filters.automatic', 'Automatic')}
+            </Toggle>
+          ))}
+        </div>
+      </div>
+
+      {/* Doors */}
+      <div>
+        <SectionLabel>{t('filters.doors', 'Doors')}</SectionLabel>
+        <div className="flex gap-2">
+          {[2, 3, 4, 5].map((n) => (
+            <Toggle
+              key={n}
+              pressed={doorsMin === n}
+              onPressedChange={() => onDoorsMinChange(doorsMin === n ? null : n)}
+              variant="outline"
+              className={PILL_CLASS}
+            >
+              {n}+
+            </Toggle>
+          ))}
+        </div>
+      </div>
+
+      {/* Colors */}
+      <div>
+        <SectionLabel>{t('filters.color', 'Color')}</SectionLabel>
+        <div className="flex flex-wrap gap-2">
+          {COLOR_OPTIONS.map(({ value, label, swatch }) => (
+            <Toggle
+              key={value}
+              pressed={!!colors?.includes(value)}
+              onPressedChange={() => toggleColor(value)}
+              variant="outline"
+              className={`${PILL_CLASS} flex items-center gap-2`}
+            >
+              <span
+                className="h-3 w-3 rounded-full border border-border"
+                style={{ backgroundColor: swatch }}
+                aria-hidden
+              />
+              {label}
             </Toggle>
           ))}
         </div>

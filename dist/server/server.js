@@ -3898,7 +3898,7 @@ var defaultSerovalPlugins = [
 * the dev styles URL for route-scoped CSS collection.
 */
 async function getStartManifest(matchedRoutes) {
-	const { tsrStartManifest } = await import("./assets/_tanstack-start-manifest_v-hIGGFpg3.js");
+	const { tsrStartManifest } = await import("./assets/_tanstack-start-manifest_v-DoqSVeha.js");
 	const startManifest = tsrStartManifest();
 	const rootRoute = startManifest.routes[rootRouteId] = startManifest.routes["__root__"] || {};
 	rootRoute.assets = rootRoute.assets || [];
@@ -3927,71 +3927,239 @@ async function getStartManifest(matchedRoutes) {
 var manifest = {
 	"3fbb17efe26a17757945ced5a774577f93ccd1715634bd638fad4336a0ca15e9": {
 		functionName: "requireAdmin_createServerFn_handler",
-		importer: () => import("./assets/route-Ct84k1G9.js")
+		importer: () => import("./assets/route-wJriPCUv.js")
+	},
+	"e7ab81fb5a75a55cf6ceeb4c559f1bb7b985085fc524baa6c21c601db3ba9328": {
+		functionName: "requireAuth_createServerFn_handler",
+		importer: () => import("./assets/route-CEpZOuFq.js")
+	},
+	"4174cf29acf4ec80d5532e79f8f4720c9b0c4c3bed82765f23de7a9912e8c345": {
+		functionName: "listUsersFn_createServerFn_handler",
+		importer: () => import("./assets/users-Dx4cHgtD.js")
+	},
+	"e2d508f23b958c5ff9db6a1affbc0d4f2ee1106c4baeeb1cc74899c8d1e13d77": {
+		functionName: "getMyProfileFn_createServerFn_handler",
+		importer: () => import("./assets/profile.fn-B2IKqO6N.js")
+	},
+	"ef9ef93b7278ae72c3a7d88359416aa4c1b4a0b2ac342ec0a8ffb5c8aa54fcef": {
+		functionName: "updateMyProfileFn_createServerFn_handler",
+		importer: () => import("./assets/profile.fn-B2IKqO6N.js")
+	},
+	"68bd5d7194ff1f9b31d1d7bd99ecee1bf067de42fea20fd3e643c914556a1e0a": {
+		functionName: "getPublicProfileByHandleFn_createServerFn_handler",
+		importer: () => import("./assets/profile.fn-B2IKqO6N.js")
+	},
+	"54ba962c9e7cf83d600efbe2557a011d21ccd1b527b15aa1d4e9390b483ca29d": {
+		functionName: "listPublicListingsByHandleFn_createServerFn_handler",
+		importer: () => import("./assets/profile.fn-B2IKqO6N.js")
+	},
+	"6d15ccacfe20e54c72ec939b1af0ff7e705eb5d5ed43203dec709ddb0cd6451e": {
+		functionName: "reportListingFn_createServerFn_handler",
+		importer: () => import("./assets/moderation.fn-BPN_lzZe.js")
+	},
+	"2046e133e02b8235307a36c4377e04e303d1aa24e901f7da3da9a776d3906258": {
+		functionName: "listReportsFn_createServerFn_handler",
+		importer: () => import("./assets/moderation.fn-BPN_lzZe.js")
+	},
+	"4e62eb2462e5b68618926a34bf0b0338946a043825745709d3a30d7080b32fac": {
+		functionName: "moderateListingFn_createServerFn_handler",
+		importer: () => import("./assets/moderation.fn-BPN_lzZe.js")
+	},
+	"dbc1a1a24366c65f19c3f34a0ba466389d04ab12db588e72744d56b4dcd43c0a": {
+		functionName: "banUserFn_createServerFn_handler",
+		importer: () => import("./assets/moderation.fn-BPN_lzZe.js")
+	},
+	"9ebdf54f03a8e6cfc7e2fe203fe7ac11abbdeba8bd21dc317173e558a253e600": {
+		functionName: "createConnectOnboardingFn_createServerFn_handler",
+		importer: () => import("./assets/payments.fn-AJeb6Rrt.js")
+	},
+	"0b7d353ced5acd9a035f2f889693d78e13beece31560e3addb8aec3fb626606f": {
+		functionName: "refreshConnectStatusFn_createServerFn_handler",
+		importer: () => import("./assets/payments.fn-AJeb6Rrt.js")
+	},
+	"028c64a85733bda4fe4156fe62741e93a85d4f4d78d0145ae4f81040af30e0fc": {
+		functionName: "createPaymentIntentFn_createServerFn_handler",
+		importer: () => import("./assets/payments.fn-AJeb6Rrt.js")
+	},
+	"5f1b32affda33a51f37f9622413c5aba3b5eada66c96c924ee15bed1c1b30e40": {
+		functionName: "listMyPaymentsFn_createServerFn_handler",
+		importer: () => import("./assets/payments.fn-AJeb6Rrt.js")
+	},
+	"b3bc083202076133314332581c96fdb7f2e526337322e215bf101f6883e18651": {
+		functionName: "getPaymentFn_createServerFn_handler",
+		importer: () => import("./assets/payments.fn-AJeb6Rrt.js")
+	},
+	"dd68cad698abf0b693c55065100188977a32d0b288d65c1f1dac3104619d7f38": {
+		functionName: "refundPaymentFn_createServerFn_handler",
+		importer: () => import("./assets/payments.fn-AJeb6Rrt.js")
+	},
+	"dd57ebc24f788ba734fa6c95be0113e75a17aed8895cb5b12acc3df4ae17e5bf": {
+		functionName: "getPayoutSummaryFn_createServerFn_handler",
+		importer: () => import("./assets/payments.fn-AJeb6Rrt.js")
+	},
+	"4638e68be622bb050989744a0f35243cd8f557e24b171cb744ecb3fa0271c5ef": {
+		functionName: "toggleFavoriteFn_createServerFn_handler",
+		importer: () => import("./assets/favorites.fn-eqSZIfOf.js")
+	},
+	"372abdd9c010c20ad528dc7810d53111b35e2b34ee0c1d0764eca0bdfadd1b74": {
+		functionName: "getFavoriteIdsFn_createServerFn_handler",
+		importer: () => import("./assets/favorites.fn-eqSZIfOf.js")
+	},
+	"ed7f21ecfe78267a0207b0bff936c6223700eaf0a4d329d1d08fa12b823065db": {
+		functionName: "getFavoritesFn_createServerFn_handler",
+		importer: () => import("./assets/favorites.fn-eqSZIfOf.js")
+	},
+	"2ecdbed99ab297fe7af48b5f492a7510ca6e12c8f2f0e0ef4ca1052c9724c489": {
+		functionName: "clearFavoritesFn_createServerFn_handler",
+		importer: () => import("./assets/favorites.fn-eqSZIfOf.js")
+	},
+	"fa6881072b65481bc52b460119b86ba8bfef87b7354de45f7f4af88ed797f0ab": {
+		functionName: "startThreadFn_createServerFn_handler",
+		importer: () => import("./assets/messaging.fn-CTdaToB6.js")
+	},
+	"252da876f9f7ff7ff21f482fe6361dddd6ad9a983f86523878b061fd076772bc": {
+		functionName: "sendMessageFn_createServerFn_handler",
+		importer: () => import("./assets/messaging.fn-CTdaToB6.js")
+	},
+	"a55d3bbe82cc48f5bc4fa0aea34fae5fcd535aefcfcd5cdf14004884661d507d": {
+		functionName: "listThreadsFn_createServerFn_handler",
+		importer: () => import("./assets/messaging.fn-CTdaToB6.js")
+	},
+	"af4e565b542936bfe1d56bd5c1f68815a447fb2d79a97f02bc135085845dd794": {
+		functionName: "getThreadFn_createServerFn_handler",
+		importer: () => import("./assets/messaging.fn-CTdaToB6.js")
+	},
+	"5108dc6c2c32a94c4d95bfd788867b2c784d3964b4f909678ed4a6851a115fae": {
+		functionName: "markThreadReadFn_createServerFn_handler",
+		importer: () => import("./assets/messaging.fn-CTdaToB6.js")
+	},
+	"e01475fb62ec747c42803ed02ba8c481c8005cb61eff9c1c5af494732fdd245b": {
+		functionName: "listNotificationsFn_createServerFn_handler",
+		importer: () => import("./assets/messaging.fn-CTdaToB6.js")
+	},
+	"ac74c08b37f2902bc2ff72feaf85c5c18376bd316d19ca53d983b408ce5f8278": {
+		functionName: "unreadNotificationsCountFn_createServerFn_handler",
+		importer: () => import("./assets/messaging.fn-CTdaToB6.js")
+	},
+	"4584eee1a4a2d22fef168bcc2707863d87dede1cda50f23596069ef414e66a62": {
+		functionName: "updateNotificationPrefsFn_createServerFn_handler",
+		importer: () => import("./assets/messaging.fn-CTdaToB6.js")
+	},
+	"aff181cf9ac612a6d438d17d008575c902106ab5541af7390ef5269b60da4cd0": {
+		functionName: "createListingFn_createServerFn_handler",
+		importer: () => import("./assets/listings-mutations.fn-nhIOSsqh.js")
+	},
+	"f464c510325eec0cd4c3b5607c1a4fc7ee8c1fdd592c3625dd3231a31c533b40": {
+		functionName: "updateListingFn_createServerFn_handler",
+		importer: () => import("./assets/listings-mutations.fn-nhIOSsqh.js")
+	},
+	"8f2d1f131172f47c665a38f12c2a2175c692ac696f4c5320891edf2e0fcfeb97": {
+		functionName: "deleteListingFn_createServerFn_handler",
+		importer: () => import("./assets/listings-mutations.fn-nhIOSsqh.js")
+	},
+	"985b3886099a2a9e5dc60665f3efd4c4867863ec07879c63ffcef3f092209a18": {
+		functionName: "publishListingFn_createServerFn_handler",
+		importer: () => import("./assets/listings-mutations.fn-nhIOSsqh.js")
+	},
+	"f0148e9fb9be2bbb8c7adcfb2143cfc28ab52168908ed1da62db0c766df9efb9": {
+		functionName: "listMyListingsFn_createServerFn_handler",
+		importer: () => import("./assets/listings-mutations.fn-nhIOSsqh.js")
+	},
+	"700b5f2d38895b2fed3ef9912674e8ce57189ca5b5d273a6795ec3d404d98235": {
+		functionName: "listSourceCandidatesFn_createServerFn_handler",
+		importer: () => import("./assets/scraping-sources.fn-tNUfR2Jg.js")
+	},
+	"477c55fcb7b9e28b013ddd664b7aa81722509f9ded35beb607ec5bf092bb525c": {
+		functionName: "updateSourceCandidateStatusFn_createServerFn_handler",
+		importer: () => import("./assets/scraping-sources.fn-tNUfR2Jg.js")
+	},
+	"903d421bd77322f07210e4130186d3741cdb66011e1a51d1151ea6f3316c83f3": {
+		functionName: "listBuiltInSourcesFn_createServerFn_handler",
+		importer: () => import("./assets/scraping-sources.fn-tNUfR2Jg.js")
 	},
 	"26b3366957b2a8598345b4c1cb62a8b116d3a6fe90b4577753278598166b9c79": {
 		functionName: "getAdminStatsFn_createServerFn_handler",
-		importer: () => import("./assets/admin-stats.fn-4_Xa4HH3.js")
+		importer: () => import("./assets/admin-stats.fn-CTgheMgD.js")
 	},
 	"4d956afcd24172f7e26241eba02632a12c6143fe3e147deff9f8bc71c47e7f59": {
 		functionName: "getRecentListingsFn_createServerFn_handler",
-		importer: () => import("./assets/admin-stats.fn-4_Xa4HH3.js")
+		importer: () => import("./assets/admin-stats.fn-CTgheMgD.js")
+	},
+	"81c0a7fcea919953b16ab082cabd48320420fb70318cd6e42d0f68b97c35c340": {
+		functionName: "getAdminBadgesFn_createServerFn_handler",
+		importer: () => import("./assets/admin-stats.fn-CTgheMgD.js")
+	},
+	"66e25fe607fe282ee73a07b84c1adda53b15d8e66777f9a370905df5fb98e11c": {
+		functionName: "getAdminDashboardFn_createServerFn_handler",
+		importer: () => import("./assets/admin-stats.fn-CTgheMgD.js")
+	},
+	"f61899677f8c1aece05386863161926b60df39087e7260904498af0de5a1b5f0": {
+		functionName: "getListingsTrendFn_createServerFn_handler",
+		importer: () => import("./assets/admin-stats.fn-CTgheMgD.js")
 	},
 	"3ef48072c2fa482e78b6294900999484ce1a25e39876e200b6bce700e475d59e": {
 		functionName: "listScrapedRawFn_createServerFn_handler",
-		importer: () => import("./assets/scraped-items.fn-UY6lO_jt.js")
+		importer: () => import("./assets/scraped-items.fn-D2J7i1ZU.js")
 	},
 	"19f137377c5ec98e208077e930b6e9cdc088e3c0b5925ada33bab06774974351": {
 		functionName: "getScrapedRawItemFn_createServerFn_handler",
-		importer: () => import("./assets/scraped-items.fn-UY6lO_jt.js")
+		importer: () => import("./assets/scraped-items.fn-D2J7i1ZU.js")
 	},
 	"fb5a593522eabc562557fd6647e67b62b488c9c88b8908376644e0a802ea4469": {
 		functionName: "rejectScrapedItemFn_createServerFn_handler",
-		importer: () => import("./assets/scraped-items.fn-UY6lO_jt.js")
+		importer: () => import("./assets/scraped-items.fn-D2J7i1ZU.js")
 	},
 	"47f12cfb5a0fb631acc96673abe852a20e87ebd9d4169b2c83d26832b1a0f55e": {
 		functionName: "publishScrapedItemFn_createServerFn_handler",
-		importer: () => import("./assets/scraped-items.fn-UY6lO_jt.js")
+		importer: () => import("./assets/scraped-items.fn-D2J7i1ZU.js")
 	},
 	"32b57744edbbf1c316c75c55e2d985820e52fbe55e588d5bd7b576addf7cc648": {
 		functionName: "publishAllPendingFn_createServerFn_handler",
-		importer: () => import("./assets/scraped-items.fn-UY6lO_jt.js")
+		importer: () => import("./assets/scraped-items.fn-D2J7i1ZU.js")
 	},
 	"0d9bd219ead6f1928a6754aad5dcfd259f51b14b7cb8d8be93586edab53233eb": {
 		functionName: "getAdminListingsFn_createServerFn_handler",
-		importer: () => import("./assets/admin-listings.fn-DaG7Ij9O.js")
+		importer: () => import("./assets/admin-listings.fn-dTeTp_Rk.js")
 	},
 	"65737796617caca386ce39fad82c960874f6dcf9227e8edcd34fb6b38e35faa9": {
 		functionName: "updateListingStatusFn_createServerFn_handler",
-		importer: () => import("./assets/admin-listings.fn-DaG7Ij9O.js")
+		importer: () => import("./assets/admin-listings.fn-dTeTp_Rk.js")
 	},
 	"20ed6b463bc8b36157b30c9d2380bbc43ab5dd9fbd481732bc316dbb56885025": {
 		functionName: "deleteListingFn_createServerFn_handler",
-		importer: () => import("./assets/admin-listings.fn-DaG7Ij9O.js")
+		importer: () => import("./assets/admin-listings.fn-dTeTp_Rk.js")
 	},
 	"94025facee4761a3176dc6843dc0614251d4732f2bce0abd94c5e3e3b8b322d9": {
 		functionName: "createListingFn_createServerFn_handler",
-		importer: () => import("./assets/admin-listings.fn-DaG7Ij9O.js")
+		importer: () => import("./assets/admin-listings.fn-dTeTp_Rk.js")
 	},
 	"e53cc75e2054c57b7158e24edb1292e49eb3e938a08e2c6784c29f79abcb672b": {
 		functionName: "searchListingsFn_createServerFn_handler",
-		importer: () => import("./assets/listings.fn-Ctx78ckp.js")
+		importer: () => import("./assets/listings.fn-BydPvc2g.js")
 	},
 	"7e5929e9ff99e3f2069d820cc5d1474d1a981479eb0d3df677c9569ced879b8f": {
 		functionName: "getListingBySlugFn_createServerFn_handler",
-		importer: () => import("./assets/listings.fn-Ctx78ckp.js")
+		importer: () => import("./assets/listings.fn-BydPvc2g.js")
+	},
+	"ae2e7a6177a9d0793b828af0d07977229d54b38b6469697b8b9a710bcbab9e5b": {
+		functionName: "getSimilarListingsFn_createServerFn_handler",
+		importer: () => import("./assets/listings.fn-BydPvc2g.js")
 	},
 	"c5b408067539b289f066c2622c1dc33cf351143919567a1e7b6197749403fc3d": {
 		functionName: "getFeaturedListingsFn_createServerFn_handler",
-		importer: () => import("./assets/listings.fn-Ctx78ckp.js")
+		importer: () => import("./assets/listings.fn-BydPvc2g.js")
 	},
 	"398eeac2d7ddc049052377cc773688d0ab34697b8f3684fc3f652af848b36f07": {
 		functionName: "getMapMarkersFn_createServerFn_handler",
-		importer: () => import("./assets/listings.fn-Ctx78ckp.js")
+		importer: () => import("./assets/listings.fn-BydPvc2g.js")
 	},
 	"8001d9a2c4621b6c69f2fa08c181ec576832a8fc1c08474ec70f3ea8bffb1445": {
 		functionName: "getScrapedListingsFn_createServerFn_handler",
-		importer: () => import("./assets/listings.fn-Ctx78ckp.js")
+		importer: () => import("./assets/listings.fn-BydPvc2g.js")
+	},
+	"80aaeedbd827930c04411db74c2c742359d4e8c80ca03e419c5b652431b55331": {
+		functionName: "getHomeStatsFn_createServerFn_handler",
+		importer: () => import("./assets/listings.fn-BydPvc2g.js")
 	}
 };
 async function getServerFnById(id, access) {
@@ -5164,8 +5332,8 @@ var baseManifestPromise;
 var cachedFinalManifestPromise;
 async function loadEntries() {
 	const [routerEntry, startEntry, pluginAdapters] = await Promise.all([
-		import("./assets/router-CwKml6_l.js"),
-		import("./assets/start-C-rRrqtt.js"),
+		import("./assets/router-B7Mo03Oy.js"),
+		import("./assets/start-CSnGkJaV.js"),
 		import("./assets/__23tanstack-start-plugin-adapters-3QxJs4a0.js")
 	]);
 	return {

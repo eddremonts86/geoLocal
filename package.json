@@ -47,6 +47,8 @@
     "@better-auth/drizzle-adapter": "^1.6.2",
     "@clerk/tanstack-react-start": "^1.1.3",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
+    "@stripe/react-stripe-js": "^6.2.0",
+    "@stripe/stripe-js": "^9.3.1",
     "@tanstack/react-form": "^1.29.0",
     "@tanstack/react-query": "^5.99.0",
     "@tanstack/react-router": "^1.168.18",
@@ -73,6 +75,7 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-i18next": "^17.0.2",
+    "stripe": "^22.1.0",
     "tailwind-merge": "^3.5.0",
     "vaul": "^1.1.2",
     "zod": "^4.3.6"
