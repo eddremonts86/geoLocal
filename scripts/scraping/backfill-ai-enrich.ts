@@ -22,8 +22,8 @@
  *   --dry-run             Don't write anything.
  *
  * Env:
- *   AI_BASE_URL  (required, e.g. http://127.0.0.1:1234/v1)
- *   AI_MODEL     (optional)
+ *   AI_SCRAPER_BASE_URL  (required, e.g. http://127.0.0.1:1234/v1)
+ *   AI_SCRAPER_MODEL     (optional)
  */
 
 import { drizzle } from 'drizzle-orm/postgres-js'

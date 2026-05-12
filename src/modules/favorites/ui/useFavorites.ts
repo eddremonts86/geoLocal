@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { useAuth } from '@clerk/tanstack-react-start'
+import { useSession } from '@/shared/lib/auth/client'
 import { useCallback, useMemo } from 'react'
 import { toggleFavoriteFn } from '../api/favorites.fn'
 import { favoriteKeys, favoriteIdsQueryOptions } from '../api/queries'
@@ -15,7 +15,9 @@ import { favoriteKeys, favoriteIdsQueryOptions } from '../api/queries'
 export function useFavorites() {
   const qc = useQueryClient()
   const navigate = useNavigate()
-  const { isSignedIn, isLoaded } = useAuth()
+  const { data: session, isPending } = useSession()
+  const isSignedIn = !!session
+  const isLoaded = !isPending
 
   const { data: idsArray = [] } = useQuery({
     ...favoriteIdsQueryOptions(),

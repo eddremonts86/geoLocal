@@ -1,4 +1,3 @@
-import { ClerkProvider } from '@clerk/tanstack-react-start'
 import { HeadContent, Scripts } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { AppProviders } from '@/shared/providers'
@@ -16,11 +15,9 @@ export function RootDocument({ children }: { children: ReactNode }) {
         className="min-h-screen bg-background font-sans antialiased"
         suppressHydrationWarning
       >
-        <ClerkProvider>
-          <AppProviders>
-            {children}
-          </AppProviders>
-        </ClerkProvider>
+        <AppProviders>
+          {children}
+        </AppProviders>
         <Scripts />
       </body>
     </html>

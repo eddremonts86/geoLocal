@@ -1,1 +1,30 @@
 node_modules
+dist
+coverage
+
+# Environment files — NEVER commit these
+# Only .env.example and .env.production.example are tracked
+.env
+.env.*
+.env.local
+.env.development
+.env.production
+!.env.example
+!.env.production.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build output
+.tanstack
+.output
+
+# clerk configuration (can include secrets)
+/.clerk/
+node_modules

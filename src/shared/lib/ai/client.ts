@@ -52,7 +52,7 @@ function extractJson(raw: string): string {
 export async function chatJSON<T>(options: ChatJSONOptions<T>): Promise<ChatJSONResult<T>> {
   const config = getAIConfig()
   if (!config.baseUrl) {
-    throw new Error('AI_BASE_URL is not set — guard with isAIEnabled() before calling chatJSON')
+    throw new Error('AI_SCRAPER_BASE_URL is not set — guard with isAIEnabled() before calling chatJSON')
   }
 
   const url = `${config.baseUrl.replace(/\/$/, '')}/chat/completions`

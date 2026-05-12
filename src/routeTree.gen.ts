@@ -26,6 +26,7 @@ import { Route as PublicAboutRouteImport } from './routes/_public/about'
 import { Route as AdminAdminIndexRouteImport } from './routes/_admin/admin/index'
 import { Route as AccountAccountIndexRouteImport } from './routes/_account/account/index'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api.stripe.webhook'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as PublicUHandleRouteImport } from './routes/_public/u.$handle'
 import { Route as PublicListingSlugRouteImport } from './routes/_public/listing/$slug'
 import { Route as AdminAdminUsersRouteImport } from './routes/_admin/admin/users'
@@ -125,6 +126,11 @@ const AccountAccountIndexRoute = AccountAccountIndexRouteImport.update({
 const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
   id: '/api/stripe/webhook',
   path: '/api/stripe/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PublicUHandleRoute = PublicUHandleRouteImport.update({
@@ -244,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminAdminUsersRoute
   '/listing/$slug': typeof PublicListingSlugRoute
   '/u/$handle': typeof PublicUHandleRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/account/': typeof AccountAccountIndexRoute
   '/admin/': typeof AdminAdminIndexRoute
@@ -278,6 +285,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminAdminUsersRoute
   '/listing/$slug': typeof PublicListingSlugRoute
   '/u/$handle': typeof PublicUHandleRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/account': typeof AccountAccountIndexRoute
   '/admin': typeof AdminAdminIndexRoute
@@ -316,6 +324,7 @@ export interface FileRoutesById {
   '/_admin/admin/users': typeof AdminAdminUsersRoute
   '/_public/listing/$slug': typeof PublicListingSlugRoute
   '/_public/u/$handle': typeof PublicUHandleRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
   '/_account/account/': typeof AccountAccountIndexRoute
   '/_admin/admin/': typeof AdminAdminIndexRoute
@@ -352,6 +361,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/listing/$slug'
     | '/u/$handle'
+    | '/api/auth/$'
     | '/api/stripe/webhook'
     | '/account/'
     | '/admin/'
@@ -386,6 +396,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/listing/$slug'
     | '/u/$handle'
+    | '/api/auth/$'
     | '/api/stripe/webhook'
     | '/account'
     | '/admin'
@@ -423,6 +434,7 @@ export interface FileRouteTypes {
     | '/_admin/admin/users'
     | '/_public/listing/$slug'
     | '/_public/u/$handle'
+    | '/api/auth/$'
     | '/api/stripe/webhook'
     | '/_account/account/'
     | '/_admin/admin/'
@@ -445,6 +457,7 @@ export interface RootRouteChildren {
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
   PublicRouteRoute: typeof PublicRouteRouteWithChildren
   SignInRoute: typeof SignInRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
 }
 
@@ -567,6 +580,13 @@ declare module '@tanstack/react-router' {
       path: '/api/stripe/webhook'
       fullPath: '/api/stripe/webhook'
       preLoaderRoute: typeof ApiStripeWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_public/u/$handle': {
@@ -793,6 +813,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRouteRoute: AdminRouteRouteWithChildren,
   PublicRouteRoute: PublicRouteRouteWithChildren,
   SignInRoute: SignInRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
 }
 export const routeTree = rootRouteImport

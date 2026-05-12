@@ -1,11 +1,13 @@
 import { createFileRoute, Outlet, redirect, Link, useRouterState } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
-import { auth } from '@clerk/tanstack-react-start/server'
+import { getRequestHeaders } from '@tanstack/react-start/server'
 import { Header } from '@/components/ui/header'
 
 const requireAuth = createServerFn().handler(async () => {
-  const { isAuthenticated } = await auth()
-  if (!isAuthenticated) throw redirect({ to: '/sign-in' })
+  const { auth } = await import('@/shared/lib/auth/better-auth')
+  const headers = getRequestHeaders()
+  const session = await auth.api.getSession({ headers })
+  if (!session) throw redirect({ to: '/sign-in' })
 })
 
 export const Route = createFileRoute('/_account')({

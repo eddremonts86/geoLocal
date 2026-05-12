@@ -2,7 +2,7 @@ import { useState, useEffect, type ReactNode } from 'react'
 import { Link, useRouterState, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { UserButton } from '@clerk/tanstack-react-start'
+import { signOut } from '@/shared/lib/auth/client'
 import {
   LayoutDashboard,
   List as ListIcon,
@@ -267,9 +267,14 @@ function AdminSidebar({ collapsed, onToggle, badges }: SidebarProps) {
           {!collapsed && <span className="meta-label">Back to site</span>}
         </Link>
         <div className="flex items-center gap-2 px-1">
-          <UserButton
-            appearance={{ elements: { avatarBox: 'w-7 h-7' } }}
-          />
+          <button
+            type="button"
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-(--surface-2) text-xs font-medium"
+            onClick={() => signOut()}
+            title="Sign out"
+          >
+            ↪
+          </button>
           {!collapsed && (
             <div className="flex-1 text-xs leading-tight">
               <div className="meta-label" style={{ color: 'var(--ink-3)' }}>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Home, Car, Wrench, Sparkles, Heart, User, Menu } from 'lucide-react'
-import { Show, UserButton } from '@clerk/tanstack-react-start'
+import { useSession, signOut } from '@/shared/lib/auth/client'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { ThemeToggle } from '@/modules/shared/ui/ThemeToggle'
@@ -50,6 +50,7 @@ export function Header() {
   const navigate = useNavigate()
   const [scrolled, setScrolled] = useState(false)
   const { count: favoriteCount } = useFavorites()
+  const { data: session } = useSession()
 
   // Listen on the public layout's scrollable <main>, not window.
   useEffect(() => {
@@ -143,21 +144,28 @@ export function Header() {
         <span className="mx-1 hidden h-4 w-px bg-(--line-1) sm:inline-block" aria-hidden />
 
         {/* Auth */}
-        <Show when="signed-in">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="meta-label hidden rounded-none px-3 sm:flex"
-            style={{ color: 'var(--ink-2)' }}
-            onClick={() => navigate({ to: '/admin' })}
-          >
-            Admin
-          </Button>
-          <div className="hidden sm:flex">
-            <UserButton />
-          </div>
-        </Show>
-        <Show when="signed-out">
+        {session ? (
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="meta-label hidden rounded-none px-3 sm:flex"
+              style={{ color: 'var(--ink-2)' }}
+              onClick={() => navigate({ to: '/admin' })}
+            >
+              Admin
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="meta-label hidden rounded-none px-3 sm:flex"
+              style={{ color: 'var(--ink-2)' }}
+              onClick={() => signOut().then(() => navigate({ to: '/' }))}
+            >
+              Sign out
+            </Button>
+          </>
+        ) : (
           <Button
             variant="ghost"
             size="icon"
@@ -167,7 +175,7 @@ export function Header() {
           >
             <User className="h-4 w-4" strokeWidth={1.5} />
           </Button>
-        </Show>
+        )}
 
         {/* Mobile hamburger (covers md too since nav is lg:flex) */}
         <Sheet>

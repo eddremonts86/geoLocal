@@ -203,7 +203,7 @@ export const favorites = pgTable(
   'favorites',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    userId: text('user_id').notNull(), // Clerk user id
+    userId: text('user_id').notNull(), // Better Auth user id
     listingId: uuid('listing_id')
       .notNull()
       .references(() => listings.id, { onDelete: 'cascade' }),
@@ -464,9 +464,9 @@ export const scrapedSourceCandidates = pgTable(
   (table) => [index('idx_scraped_source_candidates_status').on(table.status)],
 )
 
-// ─── User profiles (Clerk-keyed marketplace metadata) ─────────────────────────
-// Identity is owned by Clerk; this table holds marketplace-domain extras.
-// PK is the Clerk userId returned by `auth().userId` (no FK to `users`).
+// ─── User profiles (Better Auth-keyed marketplace metadata) ──────────────────
+// Identity is owned by Better Auth; this table holds marketplace-domain extras.
+// PK is the userId from the `users` table.
 
 export const userProfiles = pgTable(
   'user_profiles',

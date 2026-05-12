@@ -1,14 +1,14 @@
 /**
  * Server-side auth guards used by every mutating server function.
  *
- * Identity is owned by Clerk (`auth().userId`); marketplace-domain extras live
- * in `user_profiles` keyed by the same Clerk userId.
+ * Identity is owned by Better Auth; marketplace-domain extras live in
+ * `user_profiles` keyed by the same userId from the `users` table.
  *
  * SECURITY: every authz decision happens here — never trust the client. All
  * server functions that mutate domain data MUST go through one of these
  * helpers before touching the DB.
  */
-import { auth } from '@clerk/tanstack-react-start/server'
+import { getRequestHeaders } from '@tanstack/react-start/server'
 import { eq } from 'drizzle-orm'
 import { loadDb } from '@/shared/lib/db/load'
 import { listings, userProfiles } from '@/shared/lib/db/schema'
@@ -26,13 +26,16 @@ class AuthError extends Error {
 }
 
 /**
- * Resolve the current Clerk user id or throw 401.
+ * Resolve the current Better Auth user id or throw 401.
  * Loads the matching `user_profiles` row, creating one on first sight, and
  * blocks banned accounts with a 403.
  */
 export async function requireUser(): Promise<SessionUser> {
-  const { userId } = await auth()
-  if (!userId) throw new AuthError('UNAUTHENTICATED', 401)
+  const { auth } = await import('./better-auth')
+  const headers = getRequestHeaders()
+  const session = await auth.api.getSession({ headers })
+  if (!session?.user?.id) throw new AuthError('UNAUTHENTICATED', 401)
+  const userId = session.user.id
   const db = await loadDb()
 
   const existing = await db

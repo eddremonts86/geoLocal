@@ -1,8 +1,10 @@
 services:
   db:
+    profiles: ['standalone', 'docker']
     image: postgis/postgis:16-3.4-alpine
+    container_name: geo-dashboard-db
     ports:
-      - '5434:5432'
+      - '5432:5432'
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -37,11 +39,12 @@ services:
       - ./scripts/scraping/.fb-cookies.json:/app/scripts/scraping/.fb-cookies.json:ro
 
   # ── Scraper: scheduled (runs every SCRAPE_INTERVAL_HOURS hours) ─────────────
-  # Starts automatically with: docker compose up -d
+  # Start with: docker compose --profile docker up -d
   # Scrapes all sources on start, then repeats every 6 hours.
   # Logs: docker compose logs -f scraper-cron
   # Stop: docker compose stop scraper-cron
   scraper-cron:
+    profiles: ['docker']
     build:
       context: .
       dockerfile: Dockerfile.scraper

@@ -8,7 +8,7 @@
 //                     edc, homestra, boligsiden, boliga, all (default: all)
 //   --max N           Max items per source (default: 100)
 //   --dry-run         Scrape but don't write to DB
-//   --skip-ai         Skip AI normalisation even if AI_BASE_URL is set
+//   --skip-ai         Skip AI normalisation even if AI_SCRAPER_BASE_URL is set
 //
 // Examples:
 //   npx tsx scripts/scraping/runner.ts --source boligsiden --max 50

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { useAuth } from '@clerk/tanstack-react-start'
+import { useSession } from '@/shared/lib/auth/client'
 import { ArrowUpRight, Heart, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { favoritesListQueryOptions, favoriteKeys } from '@/modules/favorites/api/queries'
@@ -14,7 +14,9 @@ export const Route = createFileRoute('/_public/favorites')({
 
 function FavoritesPage() {
   const { t, i18n } = useTranslation()
-  const { isSignedIn, isLoaded } = useAuth()
+  const { data: session, isPending } = useSession()
+  const isSignedIn = !!session
+  const isLoaded = !isPending
   const qc = useQueryClient()
   const { toggle, isFavorite } = useFavorites()
 

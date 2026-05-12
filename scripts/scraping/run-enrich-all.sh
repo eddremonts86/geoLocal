@@ -5,10 +5,10 @@
 set -u
 cd "$(dirname "$0")/../.."
 
-export AI_BASE_URL="${AI_BASE_URL:-http://127.0.0.1:1234/v1}"
-export AI_MODEL="${AI_MODEL:-google/gemma-4-e4b}"
-export AI_TIMEOUT_MS="${AI_TIMEOUT_MS:-120000}"
-export AI_MAX_RETRIES="${AI_MAX_RETRIES:-1}"
+export AI_SCRAPER_BASE_URL="${AI_SCRAPER_BASE_URL:-http://127.0.0.1:1234/v1}"
+export AI_SCRAPER_MODEL="${AI_SCRAPER_MODEL:-google/gemma-4-e4b}"
+export AI_SCRAPER_TIMEOUT_MS="${AI_SCRAPER_TIMEOUT_MS:-120000}"
+export AI_SCRAPER_MAX_RETRIES="${AI_SCRAPER_MAX_RETRIES:-1}"
 
 LOG="${LOG:-/tmp/enrich-all.log}"
 # Smallest first so we see progress early; biggest last.

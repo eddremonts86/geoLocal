@@ -1,17 +1,19 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
 import { and, desc, eq, inArray } from 'drizzle-orm'
-import { auth } from '@clerk/tanstack-react-start/server'
+import { getRequestHeaders } from '@tanstack/react-start/server'
 import { loadDb } from '@/shared/lib/db/load'
 import { favorites, listings, listingTranslations, listingAssets } from '@/shared/lib/db/schema'
 
 /**
- * Resolve the current Clerk user id or throw. Use for mutations.
+ * Resolve the current Better Auth user id or throw. Use for mutations.
  */
 async function requireUserId(): Promise<string> {
-  const { userId } = await auth()
-  if (!userId) throw new Error('UNAUTHENTICATED')
-  return userId
+  const { auth } = await import('@/shared/lib/auth/better-auth')
+  const headers = getRequestHeaders()
+  const session = await auth.api.getSession({ headers })
+  if (!session?.user?.id) throw new Error('UNAUTHENTICATED')
+  return session.user.id
 }
 
 /**
@@ -47,7 +49,7 @@ export const toggleFavoriteFn = createServerFn({ method: 'POST' })
 export const getFavoriteIdsFn = createServerFn({ method: 'GET' })
   .inputValidator(z.object({}).optional().default({}))
   .handler(async (): Promise<string[]> => {
-    const { userId } = await auth()
+    const userId = await requireUserId().catch(() => null)
     if (!userId) return []
     const db = await loadDb()
     const rows = await db
@@ -70,7 +72,7 @@ export const getFavoritesFn = createServerFn({ method: 'GET' })
     }),
   )
   .handler(async ({ data }) => {
-    const { userId } = await auth()
+    const userId = await requireUserId().catch(() => null)
     if (!userId) return { items: [], total: 0 }
     const db = await loadDb()
 
