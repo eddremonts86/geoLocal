@@ -39,24 +39,39 @@ services:
       - ./scripts/scraping/.fb-cookies.json:/app/scripts/scraping/.fb-cookies.json:ro
 
   # ── Scraper: scheduled (runs every SCRAPE_INTERVAL_HOURS hours) ─────────────
-  # Start with: docker compose --profile docker up -d
-  # Scrapes all sources on start, then repeats every 6 hours.
-  # Logs: docker compose logs -f scraper-cron
-  # Stop: docker compose stop scraper-cron
+  # Start with: pnpm scrape:up  (or: docker compose --profile docker up -d scraper-cron)
+  # Talks to the workspace-postgres container on the host via host.docker.internal,
+  # so it works whether or not the standalone `db` service is running.
+  # Scrapes all sources on start, then repeats every SCRAPE_INTERVAL_HOURS hours.
+  # Logs: pnpm scrape:logs  |  Stop: pnpm scrape:down
   scraper-cron:
     profiles: ['docker']
     build:
       context: .
       dockerfile: Dockerfile.scraper
     restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
+    extra_hosts:
+      # Lets the scraper reach workspace-postgres (bound to 127.0.0.1:5432 on host).
+      - 'host.docker.internal:host-gateway'
+    env_file:
+      # Single source of truth for shared provider creds (MINIMAX_*, etc.).
+      # `required: false` keeps things working in app-only clones.
+      - path: ../../.env
+        required: false
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/geo_dashboard
+      # Override per-machine via geo-dashboard/.env if you need a different DSN.
+      DATABASE_URL: ${SCRAPER_DATABASE_URL:-postgresql://postgres:postgres@host.docker.internal:5432/geo_dashboard}
       PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
       SCRAPE_SCHEDULE: 'true'
-      SCRAPE_INTERVAL_HOURS: '6'
+      SCRAPE_INTERVAL_HOURS: '${SCRAPE_INTERVAL_HOURS:-6}'
+      # AI normaliser — optional per-app override of the workspace MINIMAX_*
+      # defaults loaded via env_file above. Leave empty to use the workspace
+      # default. See src/shared/lib/ai/config.ts for resolution order.
+      AI_SCRAPER_BASE_URL: ${AI_SCRAPER_BASE_URL:-}
+      AI_SCRAPER_API_KEY: ${AI_SCRAPER_API_KEY:-}
+      AI_SCRAPER_MODEL: ${AI_SCRAPER_MODEL:-}
+      AI_SCRAPER_TIMEOUT_MS: ${AI_SCRAPER_TIMEOUT_MS:-30000}
+      AI_SCRAPER_MAX_RETRIES: ${AI_SCRAPER_MAX_RETRIES:-2}
     volumes:
       - ./scripts/scraping/.fb-cookies.json:/app/scripts/scraping/.fb-cookies.json:ro
 

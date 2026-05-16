@@ -28,9 +28,11 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # ── Source files ──────────────────────────────────────────────────────────────
-# Only copy what the scraper needs — keeps the layer lean
+# Only copy what the scraper needs — keeps the layer lean.
+# `scripts/scraping/normalise.ts` imports from `src/shared/lib/ai`, so we copy
+# the whole shared lib (db + ai + helpers) instead of just db.
 COPY tsconfig.json ./
-COPY src/shared/lib/db ./src/shared/lib/db
+COPY src/shared/lib ./src/shared/lib
 COPY scripts/scraping ./scripts/scraping
 
 # ── Playwright environment ────────────────────────────────────────────────────

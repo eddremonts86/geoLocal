@@ -13,7 +13,7 @@ import {
   listingTranslations,
   listingAssets,
   listingFeatures,
-} from '../src/shared/lib/db/schema'
+} from '../../src/shared/lib/db/schema'
 
 const DATABASE_URL =
   process.env.DATABASE_URL ?? 'postgresql://postgres:postgres@localhost:5434/geo_dashboard'

@@ -14,6 +14,7 @@ import { Route as PublicRouteRouteImport } from './routes/_public/route'
 import { Route as AdminRouteRouteImport } from './routes/_admin/route'
 import { Route as AccountRouteRouteImport } from './routes/_account/route'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
+import { Route as ApiHealthRouteImport } from './routes/api.health'
 import { Route as PublicTermsRouteImport } from './routes/_public/terms'
 import { Route as PublicPrivacyRouteImport } from './routes/_public/privacy'
 import { Route as PublicPressRouteImport } from './routes/_public/press'
@@ -67,6 +68,11 @@ const PublicIndexRoute = PublicIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => PublicRouteRoute,
+} as any)
+const ApiHealthRoute = ApiHealthRouteImport.update({
+  id: '/api/health',
+  path: '/api/health',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const PublicTermsRoute = PublicTermsRouteImport.update({
   id: '/terms',
@@ -244,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/press': typeof PublicPressRoute
   '/privacy': typeof PublicPrivacyRoute
   '/terms': typeof PublicTermsRoute
+  '/api/health': typeof ApiHealthRoute
   '/account/profile': typeof AccountAccountProfileRoute
   '/admin/login': typeof AdminAdminLoginRoute
   '/admin/reports': typeof AdminAdminReportsRoute
@@ -279,6 +286,7 @@ export interface FileRoutesByTo {
   '/press': typeof PublicPressRoute
   '/privacy': typeof PublicPrivacyRoute
   '/terms': typeof PublicTermsRoute
+  '/api/health': typeof ApiHealthRoute
   '/account/profile': typeof AccountAccountProfileRoute
   '/admin/login': typeof AdminAdminLoginRoute
   '/admin/reports': typeof AdminAdminReportsRoute
@@ -317,6 +325,7 @@ export interface FileRoutesById {
   '/_public/press': typeof PublicPressRoute
   '/_public/privacy': typeof PublicPrivacyRoute
   '/_public/terms': typeof PublicTermsRoute
+  '/api/health': typeof ApiHealthRoute
   '/_public/': typeof PublicIndexRoute
   '/_account/account/profile': typeof AccountAccountProfileRoute
   '/_admin/admin/login': typeof AdminAdminLoginRoute
@@ -355,6 +364,7 @@ export interface FileRouteTypes {
     | '/press'
     | '/privacy'
     | '/terms'
+    | '/api/health'
     | '/account/profile'
     | '/admin/login'
     | '/admin/reports'
@@ -390,6 +400,7 @@ export interface FileRouteTypes {
     | '/press'
     | '/privacy'
     | '/terms'
+    | '/api/health'
     | '/account/profile'
     | '/admin/login'
     | '/admin/reports'
@@ -427,6 +438,7 @@ export interface FileRouteTypes {
     | '/_public/press'
     | '/_public/privacy'
     | '/_public/terms'
+    | '/api/health'
     | '/_public/'
     | '/_account/account/profile'
     | '/_admin/admin/login'
@@ -457,6 +469,7 @@ export interface RootRouteChildren {
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
   PublicRouteRoute: typeof PublicRouteRouteWithChildren
   SignInRoute: typeof SignInRoute
+  ApiHealthRoute: typeof ApiHealthRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
 }
@@ -497,6 +510,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof PublicIndexRouteImport
       parentRoute: typeof PublicRouteRoute
+    }
+    '/api/health': {
+      id: '/api/health'
+      path: '/api/health'
+      fullPath: '/api/health'
+      preLoaderRoute: typeof ApiHealthRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_public/terms': {
       id: '/_public/terms'
@@ -813,6 +833,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRouteRoute: AdminRouteRouteWithChildren,
   PublicRouteRoute: PublicRouteRouteWithChildren,
   SignInRoute: SignInRoute,
+  ApiHealthRoute: ApiHealthRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
 }
