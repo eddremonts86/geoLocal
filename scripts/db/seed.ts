@@ -7,6 +7,7 @@ import {
   listingProperties,
   listingVehicles,
   listingServices,
+  listingExperiences,
   listingTranslations,
   listingAssets,
   listingFeatures,
@@ -38,6 +39,20 @@ const NEIGHBORHOODS = [
 const PROPERTY_SUBCATS = ['house', 'apartment', 'condo', 'land', 'office', 'commercial', 'warehouse'] as const
 const VEHICLE_SUBCATS = ['car', 'motorcycle', 'bicycle', 'suv', 'commercial_vehicle', 'boat'] as const
 const SERVICE_SUBCATS = ['home_repair', 'moving', 'cleaning', 'personal_care', 'tutoring', 'events', 'technology'] as const
+const EXPERIENCE_SUBCATS = ['tour', 'class', 'adventure', 'food_drink', 'wellness', 'nightlife', 'cultural'] as const
+
+const EXPERIENCE_NAMES: Record<typeof EXPERIENCE_SUBCATS[number], { en: string[]; es: string[] }> = {
+  tour: { en: ['Historic Walking Tour', 'Canal Boat Tour', 'Bike City Tour', 'Street Art Tour'], es: ['Tour Histórico a Pie', 'Tour en Barco por los Canales', 'Tour en Bicicleta', 'Tour de Arte Urbano'] },
+  class: { en: ['Danish Pastry Workshop', 'Pottery Class', 'Photography Workshop', 'Watercolor Class'], es: ['Taller de Pastelería Danesa', 'Clase de Cerámica', 'Taller de Fotografía', 'Clase de Acuarela'] },
+  adventure: { en: ['Harbor Kayak Tour', 'Wild Swimming Experience', 'Cycling Day Trip', 'Sailing Adventure'], es: ['Tour en Kayak por el Puerto', 'Baño Salvaje', 'Excursión en Bicicleta', 'Aventura en Velero'] },
+  food_drink: { en: ['Smørrebrød Tasting', 'Craft Beer Tour', 'Coffee Roastery Visit', 'New Nordic Dinner'], es: ['Cata de Smørrebrød', 'Ruta de Cerveza Artesanal', 'Visita a Tostadora de Café', 'Cena Nórdica Moderna'] },
+  wellness: { en: ['Harbor Sauna Session', 'Forest Bathing', 'Yoga in the Park', 'Sound Healing'], es: ['Sesión de Sauna en el Puerto', 'Baño de Bosque', 'Yoga en el Parque', 'Terapia de Sonido'] },
+  nightlife: { en: ['Jazz Club Hop', 'Cocktail Crawl', 'Live Music Night', 'Rooftop Bar Tour'], es: ['Ruta de Clubes de Jazz', 'Tour de Cócteles', 'Noche de Música en Vivo', 'Tour de Bares en Azotea'] },
+  cultural: { en: ['Museum After Hours', 'Theatre Backstage Tour', 'Royal Palace Visit', 'Design District Walk'], es: ['Visita al Museo Fuera de Horario', 'Tour entre Bastidores', 'Visita al Palacio Real', 'Paseo por el Distrito de Diseño'] },
+}
+
+const EXPERIENCE_LANGUAGES = ['en', 'es', 'da', 'de', 'fr', 'it', 'sv', 'no'] as const
+const EXPERIENCE_DIFFICULTIES = ['easy', 'moderate', 'challenging'] as const
 
 const CAR_MAKES = [
   { make: 'Toyota', models: ['Corolla', 'Camry', 'RAV4', 'Yaris', 'Prius'] },
@@ -74,6 +89,8 @@ const PROPERTY_FEATURES = ['pool', 'gym', 'parking', 'balcony', 'garden', 'eleva
 const VEHICLE_FEATURES = ['bluetooth', 'gps', 'leather_seats', 'sunroof', 'backup_camera', 'heated_seats', 'cruise_control', 'apple_carplay', 'android_auto', 'parking_sensors', 'keyless_entry', 'alloy_wheels']
 const SERVICE_FEATURES = ['insured', 'certified', 'weekend_available', 'emergency_service', 'free_estimate', 'guaranteed', 'eco_friendly', 'same_day', 'online_booking', 'bilingual']
 
+const EXPERIENCE_FEATURES = ['guide_included', 'small_group', 'family_friendly', 'pickup_included', 'equipment_provided', 'photos_included', 'food_included', 'multilingual']
+
 const UNSPLASH_IMAGES = {
   property: [
     'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop',
@@ -104,6 +121,16 @@ const UNSPLASH_IMAGES = {
     'https://images.unsplash.com/photo-1573497491208-6b1acb260507?w=800&h=600&fit=crop',
     'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=600&fit=crop',
     'https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?w=800&h=600&fit=crop',
+  ],
+  experience: [
+    'https://images.unsplash.com/photo-1528909514045-2fa4ac7a08ba?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1530541930197-ff16ac917b0e?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1504609813442-a8924e83f76e?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1495567720989-cebdbdd97913?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=800&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1543007630-9710e4a00a20?w=800&h=600&fit=crop',
   ],
 }
 
@@ -285,13 +312,61 @@ function generateService(hood: typeof NEIGHBORHOODS[number]) {
   }
 }
 
+function generateExperience(hood: typeof NEIGHBORHOODS[number]) {
+  const subCat = pick(EXPERIENCE_SUBCATS)
+  const { lat, lng } = randomCoords(hood)
+  const names = EXPERIENCE_NAMES[subCat]
+  const nameIdx = randInt(0, names.en.length - 1)
+  const basePrice = randInt(150, 1800)
+  const durationHours = pick([1, 1.5, 2, 3, 4, 6, 8])
+  const maxGuests = pick([2, 4, 6, 8, 10, 12, 20])
+  const minAge = pick([0, 6, 12, 16, 18])
+  const languages = pickN(EXPERIENCE_LANGUAGES, randInt(1, 4))
+  const difficulty = pick(EXPERIENCE_DIFFICULTIES)
+
+  return {
+    listing: {
+      id: randomUUID(),
+      slug: uniqueSlug(`${subCat}-${hood.key}`),
+      category: 'experience' as const,
+      subCategory: subCat,
+      transactionType: 'hire' as const,
+      status: 'published' as const,
+      price: basePrice,
+      currency: 'DKK',
+      pricePeriod: 'hourly' as const,
+      latitude: lat,
+      longitude: lng,
+      addressLine1: `${hood.en} Meeting Point ${randInt(1, 30)}`,
+      city: 'Copenhagen',
+      country: 'DK',
+      featured: Math.random() < 0.05,
+      publishedAt: new Date(),
+    },
+    extension: {
+      durationHours,
+      maxGuests,
+      minAge,
+      languages: [...languages],
+      meetingPoint: `${hood.en} Meeting Point`,
+      included: 'Guide, equipment',
+      notIncluded: 'Transport, gratuities',
+      difficulty,
+      seasonalAvailability: { spring: true, summer: true, autumn: Math.random() < 0.8, winter: Math.random() < 0.5 },
+    },
+    translations: { en: { title: `${names.en[nameIdx]} in ${hood.en}`, summary: `${names.en[nameIdx]} — ${durationHours}h experience in ${hood.en}, Copenhagen.`, description: `Join us for a ${difficulty} ${durationHours}-hour ${names.en[nameIdx].toLowerCase()} in ${hood.en}. Group size up to ${maxGuests}. Languages: ${languages.join(', ')}.`, neighborhood: hood.en }, es: { title: `${names.es[nameIdx]} en ${hood.es}`, summary: `${names.es[nameIdx]} — experiencia de ${durationHours}h en ${hood.es}, Copenhague.`, description: `Únete a un ${names.es[nameIdx].toLowerCase()} de ${durationHours} horas en ${hood.es}. Dificultad: ${difficulty}. Grupo de hasta ${maxGuests} personas.`, neighborhood: hood.es } },
+    images: pickN(UNSPLASH_IMAGES.experience, randInt(3, 5)),
+    features: pickN(EXPERIENCE_FEATURES, randInt(3, 6)),
+  }
+}
+
 // ─── Main ──────────────────────────────────────────────────────────────────
 
 async function seed() {
   console.log('🌱 Seeding multi-category listings...')
 
   // Clear v2 tables
-  await db.execute(sql`TRUNCATE listing_features, listing_assets, listing_translations, listing_services, listing_vehicles, listing_properties, listings CASCADE`)
+  await db.execute(sql`TRUNCATE listing_features, listing_assets, listing_translations, listing_experiences, listing_services, listing_vehicles, listing_properties, listings CASCADE`)
   console.log('  ✓ Cleared existing v2 data')
 
   const BATCH_SIZE = 500
@@ -301,6 +376,7 @@ async function seed() {
     ['property', generateProperty],
     ['vehicle', generateVehicle],
     ['service', generateService],
+    ['experience', generateExperience],
   ] as const) {
     console.log(`\n📦 Seeding ${TOTAL_PER_CATEGORY} ${catName} listings...`)
     let created = 0
@@ -352,8 +428,10 @@ async function seed() {
         await db.insert(listingProperties).values(batchExtensions)
       } else if (catName === 'vehicle') {
         await db.insert(listingVehicles).values(batchExtensions)
-      } else {
+      } else if (catName === 'service') {
         await db.insert(listingServices).values(batchExtensions)
+      } else {
+        await db.insert(listingExperiences).values(batchExtensions)
       }
 
       await db.insert(listingTranslations).values(batchTranslations)
@@ -367,7 +445,7 @@ async function seed() {
     console.log(`  ✓ ${TOTAL_PER_CATEGORY} ${catName} listings created`)
   }
 
-  console.log('\n✅ Seed complete — 15,000 multi-category listings')
+  console.log('\n✅ Seed complete — 20,000 multi-category listings')
   process.exit(0)
 }
 
