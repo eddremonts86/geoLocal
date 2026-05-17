@@ -36,9 +36,10 @@ function firstEnv(...names: string[]): string | null {
 
 export function getAIConfig(): AIConfig {
   return {
-    baseUrl: firstEnv('AI_SCRAPER_BASE_URL', 'MINIMAX_BASE_URL'),
+    // Resolution order: feature-specific → unified dev var → workspace-wide cloud provider
+    baseUrl: firstEnv('AI_SCRAPER_BASE_URL', 'AI_API_BASE_URL', 'MINIMAX_BASE_URL'),
     apiKey: firstEnv('AI_SCRAPER_API_KEY', 'MINIMAX_API_KEY'),
-    model: firstEnv('AI_SCRAPER_MODEL', 'MINIMAX_MODEL') ?? 'auto',
+    model: firstEnv('AI_SCRAPER_MODEL', 'AI_OLLAMA_MODEL', 'MINIMAX_MODEL') ?? 'auto',
     timeoutMs: Number(readEnv('AI_SCRAPER_TIMEOUT_MS') ?? '30000'),
     maxRetries: Number(readEnv('AI_SCRAPER_MAX_RETRIES') ?? '2'),
   }

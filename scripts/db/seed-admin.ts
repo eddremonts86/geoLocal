@@ -80,6 +80,15 @@ async function main() {
             updated_at = now()
     `
 
+    // Upsert the user_profiles row so requireAdmin() sees role='admin'
+    await sql`
+      INSERT INTO user_profiles (user_id, role, created_at, updated_at)
+      VALUES (${user.id}, 'admin', ${now}, ${now})
+      ON CONFLICT (user_id) DO UPDATE
+        SET role = 'admin',
+            updated_at = now()
+    `
+
     console.log(`✅  Admin user ready: ${email}`)
   } finally {
     await sql.end({ timeout: 5 })
