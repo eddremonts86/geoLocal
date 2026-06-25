@@ -1,4 +1,4 @@
-const DEFAULT_BETTER_AUTH_URL = 'http://localhost:3001'
+const DEFAULT_BETTER_AUTH_URL = 'http://localhost:3000'
 const DEFAULT_DEV_SECRET = 'dev-only-geo-dashboard-secret-change-me-1234567890'
 
 function readEnvValue(name: string): string | undefined {
@@ -9,8 +9,20 @@ function readEnvValue(name: string): string | undefined {
   return meta.env?.[name]
 }
 
+function readBrowserOrigin(): string | undefined {
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin
+  }
+  return undefined
+}
+
 export function getBetterAuthUrl(): string {
-  return readEnvValue('BETTER_AUTH_URL') ?? readEnvValue('VITE_BETTER_AUTH_URL') ?? DEFAULT_BETTER_AUTH_URL
+  return (
+    readEnvValue('BETTER_AUTH_URL') ??
+    readEnvValue('VITE_BETTER_AUTH_URL') ??
+    readBrowserOrigin() ??
+    DEFAULT_BETTER_AUTH_URL
+  )
 }
 
 export function getBetterAuthSecret(): string {

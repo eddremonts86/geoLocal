@@ -1,1 +1,0 @@
-import{c as e,t}from"./jsx-runtime-DUA5mYKi.js";import{t as n}from"./ListingFormPage-ZMajdqMH.js";var r=e(t());function i(){return(0,r.jsx)(n,{})}export{i as component};
