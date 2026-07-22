@@ -38,11 +38,10 @@ services:
       # Mount cookies file (created by: pnpm run scrape:cookies)
       - ./scripts/scraping/.fb-cookies.json:/app/scripts/scraping/.fb-cookies.json:ro
 
-  # ── Scraper: scheduled (runs every SCRAPE_INTERVAL_HOURS hours) ─────────────
+  # ── Scraper: resumable backfill + six-hour incremental collection ──────────
   # Start with: pnpm scrape:up  (or: docker compose --profile docker up -d scraper-cron)
-  # Talks to the workspace-postgres container on the host via host.docker.internal,
-  # so it works whether or not the standalone `db` service is running.
-  # Scrapes all sources on start, then repeats every SCRAPE_INTERVAL_HOURS hours.
+  # Uses the shared Compose network to reach the local GeoLocal database.
+  # Backfill advances every 20 minutes; incremental checks additions every 6 hours.
   # Logs: pnpm scrape:logs  |  Stop: pnpm scrape:down
   scraper-cron:
     profiles: ['docker']
@@ -50,20 +49,22 @@ services:
       context: .
       dockerfile: Dockerfile.scraper
     restart: unless-stopped
-    extra_hosts:
-      # Lets the scraper reach workspace-postgres (bound to 127.0.0.1:5432 on host).
-      - 'host.docker.internal:host-gateway'
     env_file:
       # Single source of truth for shared provider creds (MINIMAX_*, etc.).
       # `required: false` keeps things working in app-only clones.
       - path: ../../.env
         required: false
     environment:
-      # Override per-machine via geo-dashboard/.env if you need a different DSN.
-      DATABASE_URL: ${SCRAPER_DATABASE_URL:-postgresql://postgres:postgres@host.docker.internal:5432/geo_dashboard}
+      # Override for external databases; the local default uses the shared Compose network.
+      DATABASE_URL: ${SCRAPER_DATABASE_URL:-postgresql://postgres:postgres@geo-dashboard-db:5432/geo_dashboard}
       PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
       SCRAPE_SCHEDULE: 'true'
-      SCRAPE_INTERVAL_HOURS: '${SCRAPE_INTERVAL_HOURS:-6}'
+      SCRAPE_BACKFILL_INTERVAL_MINUTES: '${SCRAPE_BACKFILL_INTERVAL_MINUTES:-20}'
+      SCRAPE_INCREMENTAL_INTERVAL_HOURS: '${SCRAPE_INCREMENTAL_INTERVAL_HOURS:-6}'
+      SCRAPE_INCREMENTAL_MAX_BATCHES: '${SCRAPE_INCREMENTAL_MAX_BATCHES:-5}'
+      SCRAPE_BATCH_SIZE: '${SCRAPE_BATCH_SIZE:-100}'
+      SCRAPE_SKIP_AI: '${SCRAPE_SKIP_AI:-true}'
+      SCRAPER_CONTACT_URL: '${SCRAPER_CONTACT_URL:-http://localhost:3003/about}'
       # AI normaliser — optional per-app override of the workspace MINIMAX_*
       # defaults loaded via env_file above. Leave empty to use the workspace
       # default. See src/shared/lib/ai/config.ts for resolution order.

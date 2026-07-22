@@ -5,7 +5,13 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "@clerk/shared",
-      "esbuild"
+      "@parcel/watcher",
+      "@percy/core",
+      "esbuild",
+      "onnxruntime-node",
+      "protobufjs",
+      "sharp",
+      "unrs-resolver"
     ]
   },
   "scripts": {
@@ -30,6 +36,8 @@
     "db:seed:vehicles": "tsx --env-file=.env scripts/db/seed-vehicles-extra.ts",
     "db:seed:admin": "tsx --env-file=.env scripts/db/seed-admin.ts",
     "scrape": "tsx scripts/scraping/runner.ts",
+    "scrape:backfill": "tsx scripts/scraping/runner.ts --flow backfill",
+    "scrape:incremental": "tsx scripts/scraping/runner.ts --flow incremental",
     "scrape:airbnb": "tsx scripts/scraping/runner.ts --source airbnb",
     "scrape:facebook": "tsx scripts/scraping/runner.ts --source facebook",
     "scrape:linkedin": "tsx scripts/scraping/runner.ts --source linkedin",
@@ -101,9 +109,11 @@
     "dotenv": "^16.4.5",
     "eslint": "^10.2.0",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^4.4.5",
     "eslint-plugin-import-x": "^4.16.2",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
+    "jsdom": "^29.1.1",
     "tailwindcss": "^4.2.2",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^6.0.2",
@@ -111,17 +121,5 @@
     "vite": "^8.0.8",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.4"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@clerk/shared",
-      "@parcel/watcher",
-      "@percy/core",
-      "esbuild",
-      "onnxruntime-node",
-      "protobufjs",
-      "sharp",
-      "unrs-resolver"
-    ]
   }
 }

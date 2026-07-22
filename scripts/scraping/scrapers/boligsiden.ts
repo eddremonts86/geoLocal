@@ -85,10 +85,10 @@ function extractCaseId(c: BoligsidenCase): string {
   // Real API: ID is embedded in _links.self.href = "/cases/<uuid>"
   const href = c._links?.self?.href
   if (href) {
-    const m = href.match(/\/cases\/([^\/?#]+)/)
+    const m = href.match(/\/cases\/([^/?#]+)/)
     if (m && m[1]) return m[1]
   }
-  if (c.id != null) return String(c.id)
+  if (c.id !== null && c.id !== undefined) return String(c.id)
   if (c.caseId) return c.caseId
   if (c.addressID) return c.addressID
   return ''
@@ -159,8 +159,11 @@ export async function scrapeBoligsiden(overrides: Partial<ScraperConfig> = {}): 
 
   const perPage = 50
   const maxPages = Math.ceil(config.maxItems / perPage)
+  const endPage = config.startPage + maxPages - 1
+  let lastPage = config.startPage - 1
+  let exhausted = false
 
-  for (let page = 1; page <= maxPages; page++) {
+  for (let page = config.startPage; page <= endPage; page++) {
     if (items.length >= config.maxItems) break
 
     const url = `https://api.boligsiden.dk/search/cases?per_page=${perPage}&page=${page}`
@@ -177,7 +180,11 @@ export async function scrapeBoligsiden(overrides: Partial<ScraperConfig> = {}): 
       }
       const body = (await res.json()) as { cases?: BoligsidenCase[]; data?: BoligsidenCase[]; results?: BoligsidenCase[] }
       const cases = body.cases ?? body.data ?? body.results ?? []
-      if (!Array.isArray(cases) || cases.length === 0) break
+      if (!Array.isArray(cases) || cases.length === 0) {
+        exhausted = true
+        break
+      }
+      lastPage = page
 
       for (const c of cases) {
         if (items.length >= config.maxItems) break
@@ -199,5 +206,7 @@ export async function scrapeBoligsiden(overrides: Partial<ScraperConfig> = {}): 
     errors,
     durationMs: Date.now() - startedAt,
     scrapedAt: new Date(),
+    nextCursor: { page: Math.max(config.startPage, lastPage + 1) },
+    exhausted,
   }
 }

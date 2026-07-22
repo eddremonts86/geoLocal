@@ -15,7 +15,7 @@ function OnboardingReturnPage() {
     refreshConnectStatusFn()
       .then((res) => {
         if (!mounted) return
-        if (res.chargesEnabled && res.payoutsEnabled) setStatus('ready')
+        if (res?.stripeChargesEnabled && res.stripePayoutsEnabled) setStatus('ready')
         else setStatus('incomplete')
       })
       .catch(() => mounted && setStatus('error'))

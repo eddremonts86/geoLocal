@@ -14,13 +14,15 @@
  * Safe to run multiple times (ON CONFLICT DO UPDATE).
  */
 
-import postgres from 'postgres'
 import { hashPassword } from 'better-auth/crypto'
+import postgres from 'postgres'
+import { normalizeDockerEnvValue } from './env-value'
 
 const DATABASE_URL = process.env.DATABASE_URL
 const NODE_ENV = process.env.NODE_ENV
-const adminEmailEnv = process.env.DEFAULT_ADMIN_EMAIL
-const adminPasswordEnv = process.env.DEFAULT_ADMIN_PASSWORD
+const rawAdminEmailEnv = process.env.DEFAULT_ADMIN_EMAIL
+const adminEmailEnv = normalizeDockerEnvValue(rawAdminEmailEnv)
+const adminPasswordEnv = normalizeDockerEnvValue(process.env.DEFAULT_ADMIN_PASSWORD)
 
 // In production, refuse to fall back to hardcoded dev credentials.
 // This prevents an unconfigured Coolify deploy from ending up with a
@@ -46,6 +48,27 @@ async function main() {
   const sql = postgres(DATABASE_URL!, { max: 1, prepare: false })
 
   try {
+    const legacyEmail = rawAdminEmailEnv?.trim()
+    if (legacyEmail && legacyEmail !== email) {
+      const [validUser] = await sql`SELECT id FROM users WHERE email = ${email} LIMIT 1`
+      const [legacyUser] = await sql`SELECT id FROM users WHERE email = ${legacyEmail} LIMIT 1`
+
+      if (!validUser && legacyUser) {
+        await sql.begin(async (transaction) => {
+          await transaction`
+            UPDATE accounts
+            SET account_id = ${email}, updated_at = now()
+            WHERE user_id = ${legacyUser.id} AND provider_id = 'credential'
+          `
+          await transaction`
+            UPDATE users
+            SET email = ${email}, updated_at = now()
+            WHERE id = ${legacyUser.id}
+          `
+        })
+      }
+    }
+
     const hashedPassword = await hashPassword(password)
     const userId = crypto.randomUUID()
     const accountId = crypto.randomUUID()

@@ -89,12 +89,15 @@ export async function scrapeDba(overrides: Partial<ScraperConfig> = {}): Promise
 
   const perPage = 40
   const maxPages = Math.max(1, Math.ceil(config.maxItems / perPage))
-  console.log(`[dba] up to ${config.maxItems} items across ${maxPages} pages`)
+  const endPage = config.startPage + maxPages - 1
+  let lastPage = config.startPage - 1
+  let exhausted = false
+  console.log(`[dba] up to ${config.maxItems} items across pages ${config.startPage}-${endPage}`)
 
   try {
-    for (let p = 1; p <= maxPages; p++) {
+    for (let p = config.startPage; p <= endPage; p++) {
       if (items.length >= config.maxItems) break
-      if (p > 1) {
+      if (p > 1 || config.startPage > 1) {
         const sep = SCRAPE_TARGETS.dba.cars.includes('?') ? '&' : '?'
         const url = `${SCRAPE_TARGETS.dba.cars}${sep}page=${p}`
         try {
@@ -108,8 +111,10 @@ export async function scrapeDba(overrides: Partial<ScraperConfig> = {}): Promise
       const products = await extractJsonLdProducts(page)
       if (products.length === 0) {
         console.log(`[dba]   page ${p}: no Products in JSON-LD, stopping`)
+        exhausted = true
         break
       }
+      lastPage = p
 
       let added = 0
       for (const pr of products) {
@@ -122,9 +127,12 @@ export async function scrapeDba(overrides: Partial<ScraperConfig> = {}): Promise
         added++
       }
       console.log(`[dba]   page ${p}: ${added} new (total ${items.length}/${config.maxItems})`)
-      if (added === 0) break
+      if (added === 0) {
+        exhausted = true
+        break
+      }
 
-      if (p < maxPages) await page.waitForTimeout(1500 + Math.random() * 1000)
+      if (p < endPage) await page.waitForTimeout(1500 + Math.random() * 1000)
     }
   } catch (err) {
     errors.push(err instanceof Error ? err.message : String(err))
@@ -139,5 +147,7 @@ export async function scrapeDba(overrides: Partial<ScraperConfig> = {}): Promise
     errors,
     durationMs: Date.now() - startedAt,
     scrapedAt: new Date(),
+    nextCursor: { page: Math.max(config.startPage, lastPage + 1) },
+    exhausted,
   }
 }

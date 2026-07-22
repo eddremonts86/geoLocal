@@ -11,8 +11,8 @@
  */
 
 import { getScraperConfig } from '../config'
-import type { ScrapedItem, ScrapeResult, ScraperConfig } from '../types'
 import { fetchHtml, extractJsonLd, stripHtml, absoluteUrl } from '../helpers/html-extract'
+import type { ScrapedItem, ScrapeResult, ScraperConfig } from '../types'
 
 const BASE = 'https://www.edc.dk'
 
@@ -135,12 +135,78 @@ function extractImages(rec: Record<string, unknown>): string[] {
   return out.filter((u) => (seen.has(u) ? false : seen.add(u)))
 }
 
+function decodeHtml(value: string): string {
+  return value
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => String.fromCodePoint(Number.parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, decimal: string) => String.fromCodePoint(Number(decimal)))
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&nbsp;/g, ' ')
+}
+
+function firstMatch(html: string, pattern: RegExp): string | null {
+  const value = pattern.exec(html)?.[1]
+  return value ? decodeHtml(value.trim()) : null
+}
+
+export function parseEdcDetailHtml(html: string, url: string): ScrapedItem | null {
+  const sourceId =
+    firstMatch(html, /"caseNumber"\s*:\s*"([^"]+)"/i) ??
+    url.split('/').filter(Boolean).pop() ??
+    null
+  if (!sourceId) return null
+
+  const rawTitle = firstMatch(html, /<title[^>]*>([\s\S]*?)<\/title>/i)
+  const title = rawTitle?.replace(/\s+-\s+[^-]*til salg.*$/i, '').trim() ?? null
+  const description = firstMatch(
+    html,
+    /<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i,
+  )
+  const city = firstMatch(html, /itemProp=["']addressLocality["'][^>]*>([^<]+)</i)
+  const priceText = firstMatch(html, /itemProp=["']price["'][^>]+content=["']([^"']+)["']/i)
+  const priceDigits = priceText?.replace(/[^\d]/g, '') ?? ''
+  const price = priceDigits ? Number(priceDigits) : null
+  const numberMatch = (key: string) => {
+    const match = new RegExp(`"${key}"\\s*:\\s*(-?\\d+(?:\\.\\d+)?)`, 'i').exec(html)?.[1]
+    const value = match ? Number(match) : null
+    return Number.isFinite(value) ? value : null
+  }
+  const livingAreaMatch = /"livingArea"\s*:\s*\{[^}]*"value"\s*:\s*(\d+(?:\.\d+)?)/i.exec(html)?.[1]
+  const areaSqm = livingAreaMatch ? Number(livingAreaMatch) : null
+  const imageUrls = Array.from(
+    html.matchAll(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/gi),
+    (match) => decodeHtml(match[1]!),
+  )
+
+  return {
+    sourceId,
+    sourceUrl: url,
+    rawData: { _sourceUrl: url, _extraction: 'edc-server-rendered' },
+    mappedCategory: 'property',
+    listingIntent: 'for_sale',
+    title,
+    description,
+    price: Number.isFinite(price) ? price : null,
+    currency: 'DKK',
+    city,
+    latitude: numberMatch('latitude'),
+    longitude: numberMatch('longitude'),
+    imageUrls: [...new Set(imageUrls)],
+    durationHours: null,
+    maxGuests: null,
+    serviceType: null,
+    bedrooms: null,
+    areaSqm: Number.isFinite(areaSqm) ? areaSqm : null,
+    yearBuilt: numberMatch('constructionYear'),
+  }
+}
+
 async function scrapeDetailPage(url: string): Promise<ScrapedItem | null> {
   try {
     const html = await fetchHtml(url)
     const jsonLdBlocks = extractJsonLd(html)
     const raw = findJsonLdListing(jsonLdBlocks)
-    if (!raw) return null
+    if (!raw) return parseEdcDetailHtml(html, url)
     const listing = flattenOffer(raw)
 
     const { price, currency } = extractPrice(listing)
@@ -207,7 +273,9 @@ export async function scrapeEdc(overrides: Partial<ScraperConfig> = {}): Promise
   const items: ScrapedItem[] = []
   const errors: string[] = []
 
-  for (const searchUrl of ZONE_SEEDS) {
+  const zoneIndex = Math.max(0, config.startPage - 1)
+  const searchUrls = ZONE_SEEDS.slice(zoneIndex, zoneIndex + 1)
+  for (const searchUrl of searchUrls) {
     if (items.length >= config.maxItems) break
     try {
       console.log(`  [edc] browsing ${searchUrl}`)
@@ -232,5 +300,14 @@ export async function scrapeEdc(overrides: Partial<ScraperConfig> = {}): Promise
     }
   }
 
-  return { source: 'edc', items, errors, durationMs: Date.now() - startedAt, scrapedAt: new Date() }
+  const nextPage = config.startPage + searchUrls.length
+  return {
+    source: 'edc',
+    items,
+    errors,
+    durationMs: Date.now() - startedAt,
+    scrapedAt: new Date(),
+    nextCursor: { page: nextPage, partition: 'zone' },
+    exhausted: nextPage > ZONE_SEEDS.length,
+  }
 }

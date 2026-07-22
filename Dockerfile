@@ -26,6 +26,8 @@ CMD ["pnpm", "dev"]
 
 FROM base AS builder
 
+ENV NODE_ENV=production
+
 WORKDIR /app
 
 COPY . .
@@ -59,4 +61,4 @@ COPY scripts ./scripts
 
 EXPOSE 3000
 
-CMD ["node", "server.prod.mjs"]
+CMD ["sh", "scripts/docker-app-entrypoint.sh"]
