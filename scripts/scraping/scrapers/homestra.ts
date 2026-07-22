@@ -15,9 +15,9 @@
  *     cache.
  */
 
-import type { ScrapedItem, ScrapeResult, ScraperConfig } from '../types'
 import { getScraperConfig, pickUserAgent } from '../config'
 import { fetchHtml } from '../helpers/html-extract'
+import type { ScrapedItem, ScrapeResult, ScraperConfig } from '../types'
 
 const BASE = 'https://homestra.com'
 const LIST_PATH = '/list/houses-for-sale/denmark/'
@@ -151,12 +151,16 @@ export async function scrapeHomestra(overrides: Partial<ScraperConfig> = {}): Pr
   const errors: string[] = []
 
   const maxPages = Math.max(1, Math.ceil(config.maxItems / 40))
-  console.log(`[homestra] fetching DK listings, up to ${config.maxItems} items (${maxPages} pages)`)
+  const endPage = config.startPage + maxPages - 1
+  let lastPage = config.startPage - 1
+  let exhausted = false
+  console.log(`[homestra] fetching DK listings, pages ${config.startPage}-${endPage}`)
 
-  for (let page = 1; page <= maxPages; page++) {
+  for (let page = config.startPage; page <= endPage; page++) {
     if (items.length >= config.maxItems) break
     try {
       const { props, apollo } = await scrapePage(page)
+      lastPage = page
       let dkCount = 0
       for (const rec of props) {
         if (items.length >= config.maxItems) break
@@ -167,8 +171,11 @@ export async function scrapeHomestra(overrides: Partial<ScraperConfig> = {}): Pr
         }
       }
       console.log(`[homestra]   page ${page}: ${dkCount} DK properties`)
-      if (dkCount === 0) break // out of DK results
-      if (page < maxPages) await new Promise((r) => setTimeout(r, 1000))
+      if (dkCount === 0) {
+        exhausted = true
+        break
+      }
+      if (page < endPage) await new Promise((r) => setTimeout(r, 1000))
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       errors.push(`page ${page}: ${msg}`)
@@ -182,5 +189,7 @@ export async function scrapeHomestra(overrides: Partial<ScraperConfig> = {}): Pr
     errors,
     durationMs: Date.now() - startedAt,
     scrapedAt: new Date(),
+    nextCursor: { page: Math.max(config.startPage, lastPage + 1) },
+    exhausted,
   }
 }

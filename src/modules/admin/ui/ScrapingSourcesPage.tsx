@@ -1,4 +1,3 @@
-import { useEffect, useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import {
@@ -12,12 +11,13 @@ import {
   ArrowUpRight,
   ShieldCheck,
 } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   listBuiltInSourcesFn,
   listSourceCandidatesFn,
   updateSourceCandidateStatusFn,
 } from '@/modules/admin/api/scraping-sources.fn'
-import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/shared/lib/utils'
 
 type CandidateStatus = 'pending' | 'approved' | 'rejected' | 'dead'
@@ -124,7 +124,7 @@ export function ScrapingSourcesPage() {
     onSuccess: invalidate,
   })
 
-  const items = data?.items ?? []
+  const items = useMemo(() => data?.items ?? [], [data?.items])
   const filteredItems = useMemo(() => {
     if (!search.trim()) return items
     const q = search.toLowerCase()
@@ -287,6 +287,7 @@ export function ScrapingSourcesPage() {
                   published={s.published}
                   rejected={s.rejected}
                   lastSeenAt={s.lastSeenAt}
+                  flows={s.flows}
                 />
               ))}
             </div>
@@ -536,6 +537,7 @@ function BuiltInRow({
   published,
   rejected,
   lastSeenAt,
+  flows,
 }: {
   kind: 'built-in' | 'approved-candidate'
   label: string
@@ -545,6 +547,27 @@ function BuiltInRow({
   published: number
   rejected: number
   lastSeenAt: string | null
+  flows: Array<{
+    flow: string
+    status: string
+    cursor: { page: number; partition?: string }
+    exhausted: boolean
+    pauseReason: string | null
+    cooldownUntil: string | null
+    lastSuccessAt: string | null
+    nextRunAt: string | null
+    latestRun: {
+      status: string
+      found: number
+      added: number
+      updated: number
+      known: number
+      errors: number
+      stopReason: string | null
+      startedAt: string
+      finishedAt: string | null
+    } | null
+  }>
 }) {
   const favicon = `https://www.google.com/s2/favicons?sz=32&domain=${domain}`
   const lastSeen = lastSeenAt ? formatRelative(lastSeenAt) : null
@@ -618,6 +641,26 @@ function BuiltInRow({
             </>
           )}
         </div>
+        {!isAwaiting && flows.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {flows.map((flow) => (
+              <span
+                key={flow.flow}
+                className="inline-flex items-center gap-1.5 border border-(--line-1) px-2 py-1 font-mono text-[10px] text-(--ink-2)"
+                title={
+                  flow.pauseReason ??
+                  `${flow.latestRun?.added ?? 0} added · ${flow.latestRun?.known ?? 0} known · next ${flow.nextRunAt ? formatRelativeFuture(flow.nextRunAt) : 'unscheduled'}`
+                }
+              >
+                <span className="uppercase">{flow.flow}</span>
+                <span>·</span>
+                <span>{flow.status}</span>
+                {flow.status !== 'paused' && <span>· p{flow.cursor.page}</span>}
+                {flow.latestRun && <span>· +{flow.latestRun.added}</span>}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="hidden min-w-32 md:block">
@@ -683,4 +726,12 @@ function formatRelative(iso: string): string {
   const d = Math.round(h / 24)
   if (d < 30) return `${d}d ago`
   return new Date(iso).toLocaleDateString()
+}
+
+function formatRelativeFuture(iso: string): string {
+  const ts = new Date(iso).getTime()
+  if (!Number.isFinite(ts)) return ''
+  const minutes = Math.max(0, Math.round((ts - Date.now()) / 60_000))
+  if (minutes < 60) return `in ${minutes}m`
+  return `in ${Math.round(minutes / 60)}h`
 }

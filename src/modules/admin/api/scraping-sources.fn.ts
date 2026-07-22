@@ -4,11 +4,13 @@
  */
 
 import { createServerFn } from '@tanstack/react-start'
-import { z } from 'zod'
 import { eq, desc, sql, count, asc } from 'drizzle-orm'
+import { z } from 'zod'
 import { loadDb } from '@/shared/lib/db/load'
 import {
   scrapedRaw,
+  scrapeCheckpoints,
+  scrapeRuns,
   scrapedSourceCandidates,
   scrapingSources,
 } from '@/shared/lib/db/schema'
@@ -85,6 +87,36 @@ export const listBuiltInSourcesFn = createServerFn({ method: 'GET' }).handler(as
     .from(scrapedRaw)
     .groupBy(scrapedRaw.source, scrapedRaw.status)
 
+  const checkpoints = await db.select().from(scrapeCheckpoints)
+  const recentRuns = await db
+    .select()
+    .from(scrapeRuns)
+    .orderBy(desc(scrapeRuns.startedAt))
+    .limit(200)
+
+  type FlowState = {
+    flow: string
+    status: string
+    cursor: { page: number; partition?: string }
+    watermark: { sourceId: string; observedAt: string } | null
+    exhausted: boolean
+    pauseReason: string | null
+    cooldownUntil: string | null
+    lastSuccessAt: string | null
+    nextRunAt: string | null
+    latestRun: {
+      status: string
+      found: number
+      added: number
+      updated: number
+      known: number
+      errors: number
+      stopReason: string | null
+      startedAt: string
+      finishedAt: string | null
+    } | null
+  }
+
   type ActiveSource = {
     source: string
     label: string
@@ -98,6 +130,7 @@ export const listBuiltInSourcesFn = createServerFn({ method: 'GET' }).handler(as
     published: number
     rejected: number
     lastSeenAt: string | null
+    flows: FlowState[]
   }
 
   const map = new Map<string, ActiveSource>()
@@ -114,6 +147,42 @@ export const listBuiltInSourcesFn = createServerFn({ method: 'GET' }).handler(as
       published: 0,
       rejected: 0,
       lastSeenAt: null,
+      flows: [],
+    })
+  }
+
+  const latestRunByFlow = new Map<string, (typeof recentRuns)[number]>()
+  for (const run of recentRuns) {
+    const key = `${run.source}:${run.flow}`
+    if (!latestRunByFlow.has(key)) latestRunByFlow.set(key, run)
+  }
+  for (const checkpoint of checkpoints) {
+    const target = map.get(checkpoint.source)
+    if (!target) continue
+    const run = latestRunByFlow.get(`${checkpoint.source}:${checkpoint.flow}`)
+    target.flows.push({
+      flow: checkpoint.flow,
+      status: checkpoint.status,
+      cursor: checkpoint.cursor,
+      watermark: checkpoint.watermark ?? null,
+      exhausted: checkpoint.exhausted,
+      pauseReason: checkpoint.pauseReason ?? null,
+      cooldownUntil: checkpoint.cooldownUntil?.toISOString() ?? null,
+      lastSuccessAt: checkpoint.lastSuccessAt?.toISOString() ?? null,
+      nextRunAt: checkpoint.nextRunAt?.toISOString() ?? null,
+      latestRun: run
+        ? {
+            status: run.status,
+            found: run.foundCount,
+            added: run.newCount,
+            updated: run.updatedCount,
+            known: run.knownCount,
+            errors: run.errorCount,
+            stopReason: run.stopReason ?? null,
+            startedAt: run.startedAt.toISOString(),
+            finishedAt: run.finishedAt?.toISOString() ?? null,
+          }
+        : null,
     })
   }
   for (const r of stats) {
@@ -138,5 +207,4 @@ export const listBuiltInSourcesFn = createServerFn({ method: 'GET' }).handler(as
     }),
   }
 })
-
 

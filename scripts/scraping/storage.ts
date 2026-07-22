@@ -2,9 +2,9 @@
 // Persists scraped items to the scraped_raw staging table.
 // Deduplicates on (source, source_id) — already-scraped items are skipped.
 
+import { and, eq, inArray } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
-import { and, eq } from 'drizzle-orm'
 import { scrapedRaw } from '../../src/shared/lib/db/schema'
 import type { ScrapedItem, ScrapedSource, ScrapeResult } from './types'
 
@@ -12,7 +12,7 @@ function getDb() {
   const connectionString =
     process.env.DATABASE_URL ?? 'postgresql://postgres:postgres@localhost:5434/geo_dashboard'
   const client = postgres(connectionString, { prepare: false })
-  return drizzle(client)
+  return { client, db: drizzle(client) }
 }
 
 export interface SaveResult {
@@ -20,6 +20,14 @@ export interface SaveResult {
   skipped: number
   updated: number
   errors: string[]
+}
+
+export function classifySourceIds(sourceIds: string[], existingIds: Set<string>) {
+  const uniqueIds = [...new Set(sourceIds)]
+  return {
+    newIds: uniqueIds.filter((id) => !existingIds.has(id)),
+    knownIds: uniqueIds.filter((id) => existingIds.has(id)),
+  }
 }
 
 export interface NormaliseMeta {
@@ -42,60 +50,75 @@ export async function saveScrapeResults(
     return { saved: 0, skipped: 0, updated: 0, errors: [] }
   }
 
-  const db = getDb()
+  const { client, db } = getDb()
   let saved = 0
   let skipped = 0
   let updated = 0
   const errors: string[] = []
 
-  for (const item of items) {
-    try {
-      // Check for existing record
-      const [existing] = await db
-        .select({ id: scrapedRaw.id, normalised: scrapedRaw.normalised })
-        .from(scrapedRaw)
-        .where(and(eq(scrapedRaw.source, source), eq(scrapedRaw.sourceId, item.sourceId)))
-        .limit(1)
+  try {
+    const ids = [...new Set(items.map((item) => item.sourceId))]
+    const existingRows = ids.length
+      ? await db
+          .select({ sourceId: scrapedRaw.sourceId })
+          .from(scrapedRaw)
+          .where(and(eq(scrapedRaw.source, source), inArray(scrapedRaw.sourceId, ids)))
+      : []
+    const existingIds = new Set(existingRows.map((row) => row.sourceId))
 
-      const meta = normalisedByMap?.get(item.sourceId)
-
-      if (existing) {
-        // Back-fill: row exists but has no AI-normalised data AND we have fresh one → update in place.
-        if (!existing.normalised && meta?.json) {
-          await db
-            .update(scrapedRaw)
-            .set({
-              normalised: meta.json,
-              normalisedAt: new Date(),
-              normalisedBy: meta.by ?? undefined,
-            })
-            .where(eq(scrapedRaw.id, existing.id))
-          updated++
-        } else {
-          skipped++
-        }
-        continue
-      }
-
-      await db.insert(scrapedRaw).values({
-        source,
-        sourceId: item.sourceId,
-        sourceUrl: item.sourceUrl,
-        rawData: item.listingIntent
+    for (const item of items) {
+      try {
+        const meta = normalisedByMap?.get(item.sourceId)
+        const rawData = item.listingIntent
           ? { ...item.rawData, _listingIntent: item.listingIntent }
-          : item.rawData,
-        mappedCategory: item.mappedCategory ?? undefined,
-        status: 'pending',
-        scrapedAt: new Date(),
-        normalised: meta?.json ?? undefined,
-        normalisedAt: meta?.json ? new Date() : undefined,
-        normalisedBy: meta?.by ?? undefined,
-      })
-      saved++
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      errors.push(`[${item.sourceId}] ${msg}`)
+          : item.rawData
+        const values = {
+          source,
+          sourceId: item.sourceId,
+          sourceUrl: item.sourceUrl,
+          rawData,
+          mappedCategory: item.mappedCategory ?? undefined,
+          status: 'pending',
+          scrapedAt: new Date(),
+          normalised: meta?.json ?? undefined,
+          normalisedAt: meta?.json ? new Date() : undefined,
+          normalisedBy: meta?.by ?? undefined,
+        } as const
+
+        await db
+          .insert(scrapedRaw)
+          .values(values)
+          .onConflictDoUpdate({
+            target: [scrapedRaw.source, scrapedRaw.sourceId],
+            set: {
+              sourceUrl: item.sourceUrl,
+              rawData,
+              mappedCategory: item.mappedCategory ?? undefined,
+              scrapedAt: new Date(),
+              ...(meta?.json
+                ? {
+                    normalised: meta.json,
+                    normalisedAt: new Date(),
+                    normalisedBy: meta.by ?? undefined,
+                  }
+                : {}),
+            },
+          })
+
+        if (existingIds.has(item.sourceId)) {
+          updated++
+          skipped++
+        } else {
+          saved++
+          existingIds.add(item.sourceId)
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        errors.push(`[${item.sourceId}] ${msg}`)
+      }
     }
+  } finally {
+    await client.end({ timeout: 5 })
   }
 
   return { saved, skipped, updated, errors }
@@ -111,7 +134,7 @@ export function printSummary(result: ScrapeResult, saveResult: SaveResult): void
   console.log(`  Scraped     : ${result.items.length} items`)
   console.log(`  Duration    : ${(result.durationMs / 1000).toFixed(1)}s`)
   console.log(`  Saved       : ${saveResult.saved}`)
-  console.log(`  Updated     : ${saveResult.updated} (normalised back-filled)`)
+  console.log(`  Refreshed   : ${saveResult.updated} active records`)
   console.log(`  Skipped     : ${saveResult.skipped} (already exist)`)
   if (result.errors.length > 0) {
     console.log(`  Scrape errs : ${result.errors.length}`)

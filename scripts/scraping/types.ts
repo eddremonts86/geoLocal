@@ -68,6 +68,10 @@ export interface ScrapeResult {
   errors: string[]
   durationMs: number
   scrapedAt: Date
+  /** Durable cursor to persist only after this batch is stored successfully. */
+  nextCursor?: { page: number; partition?: string }
+  /** True when the source explicitly reports the end of its active catalogue. */
+  exhausted?: boolean
 }
 
 export interface ScraperConfig {
@@ -84,10 +88,15 @@ export interface ScraperConfig {
   /** Country/locale to target. */
   targetCountry: string
   targetLocale: string
+  /** First page to request for a resumable backfill/incremental slice. */
+  startPage: number
+  /** Collection mode. Incremental adapters must sort newest first. */
+  flow: 'backfill' | 'incremental'
 }
 
 export interface RunnerOptions {
   sources: ScrapedSource[]
   maxItems: number
   dryRun: boolean
+  flow: 'backfill' | 'incremental'
 }

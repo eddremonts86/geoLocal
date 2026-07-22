@@ -446,7 +446,63 @@ export const scrapedRaw = pgTable(
   (table) => [
     index('idx_scraped_raw_source').on(table.source),
     index('idx_scraped_raw_status').on(table.status),
-    index('idx_scraped_raw_source_id').on(table.source, table.sourceId),
+    uniqueIndex('uq_scraped_raw_source_id').on(table.source, table.sourceId),
+  ],
+)
+
+export const scrapeCheckpoints = pgTable(
+  'scrape_checkpoints',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    source: varchar('source', { length: 64 })
+      .notNull()
+      .references(() => scrapingSources.key, { onUpdate: 'cascade', onDelete: 'cascade' }),
+    flow: varchar('flow', { length: 20 }).notNull(),
+    status: varchar('status', { length: 20 }).notNull().default('idle'),
+    cursor: jsonb('cursor').$type<{ page: number; partition?: string }>().notNull().default({ page: 1 }),
+    watermark: jsonb('watermark').$type<{ sourceId: string; observedAt: string }>(),
+    consecutiveKnownItems: integer('consecutive_known_items').notNull().default(0),
+    consecutiveFailures: integer('consecutive_failures').notNull().default(0),
+    exhausted: boolean('exhausted').notNull().default(false),
+    leaseOwner: text('lease_owner'),
+    leaseExpiresAt: timestamp('lease_expires_at'),
+    cooldownUntil: timestamp('cooldown_until'),
+    pauseReason: text('pause_reason'),
+    lastSuccessAt: timestamp('last_success_at'),
+    nextRunAt: timestamp('next_run_at'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('uq_scrape_checkpoints_source_flow').on(table.source, table.flow),
+    index('idx_scrape_checkpoints_due').on(table.flow, table.status, table.nextRunAt),
+  ],
+)
+
+export const scrapeRuns = pgTable(
+  'scrape_runs',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    source: varchar('source', { length: 64 })
+      .notNull()
+      .references(() => scrapingSources.key, { onUpdate: 'cascade', onDelete: 'cascade' }),
+    flow: varchar('flow', { length: 20 }).notNull(),
+    status: varchar('status', { length: 20 }).notNull().default('running'),
+    cursorBefore: jsonb('cursor_before'),
+    cursorAfter: jsonb('cursor_after'),
+    foundCount: integer('found_count').notNull().default(0),
+    newCount: integer('new_count').notNull().default(0),
+    updatedCount: integer('updated_count').notNull().default(0),
+    knownCount: integer('known_count').notNull().default(0),
+    errorCount: integer('error_count').notNull().default(0),
+    stopReason: text('stop_reason'),
+    errorMessage: text('error_message'),
+    startedAt: timestamp('started_at').notNull().defaultNow(),
+    finishedAt: timestamp('finished_at'),
+  },
+  (table) => [
+    index('idx_scrape_runs_source_started').on(table.source, table.startedAt),
+    index('idx_scrape_runs_flow_started').on(table.flow, table.startedAt),
   ],
 )
 

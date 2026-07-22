@@ -73,12 +73,15 @@ export async function scrapeBilbasen(
 
   const perPage = 30
   const maxPages = Math.max(1, Math.ceil(config.maxItems / perPage))
-  console.log(`[bilbasen] up to ${config.maxItems} items across ${maxPages} pages`)
+  const endPage = config.startPage + maxPages - 1
+  let lastPage = config.startPage - 1
+  let exhausted = false
+  console.log(`[bilbasen] up to ${config.maxItems} items across pages ${config.startPage}-${endPage}`)
 
   try {
-    for (let p = 1; p <= maxPages; p++) {
+    for (let p = config.startPage; p <= endPage; p++) {
       if (items.length >= config.maxItems) break
-      if (p > 1) {
+      if (p > 1 || config.startPage > 1) {
         const url = `${SCRAPE_TARGETS.bilbasen.search}?page=${p}`
         try {
           await page.goto(url, { waitUntil: 'networkidle', timeout: 45_000 })
@@ -91,8 +94,10 @@ export async function scrapeBilbasen(
       const products = await extractJsonLdProducts(page)
       if (products.length === 0) {
         console.log(`[bilbasen]   page ${p}: no Products in JSON-LD, stopping`)
+        exhausted = true
         break
       }
+      lastPage = p
 
       let added = 0
       for (const pr of products) {
@@ -107,9 +112,12 @@ export async function scrapeBilbasen(
       console.log(
         `[bilbasen]   page ${p}: ${added} new (total ${items.length}/${config.maxItems})`,
       )
-      if (added === 0) break // duplicate page → end of catalog
+      if (added === 0) {
+        exhausted = true
+        break
+      }
 
-      if (p < maxPages) await page.waitForTimeout(1500 + Math.random() * 1000)
+      if (p < endPage) await page.waitForTimeout(1500 + Math.random() * 1000)
     }
   } catch (err) {
     errors.push(err instanceof Error ? err.message : String(err))
@@ -124,5 +132,7 @@ export async function scrapeBilbasen(
     errors,
     durationMs: Date.now() - startedAt,
     scrapedAt: new Date(),
+    nextCursor: { page: Math.max(config.startPage, lastPage + 1) },
+    exhausted,
   }
 }

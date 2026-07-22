@@ -1,50 +1,38 @@
 #!/usr/bin/env tsx
-// ─── Scraping runner — CLI entry point ────────────────────────────────────────
-// Runs manually: npx tsx scripts/scraping/runner.ts [options]
-//
-// Options:
-//   --source <list>   Sources to scrape: comma-separated or 'all'. Valid:
-//                     airbnb, facebook, facebook-events, linkedin,
-//                     edc, homestra, boligsiden, boliga, all (default: all)
-//   --max N           Max items per source (default: 100)
-//   --dry-run         Scrape but don't write to DB
-//   --skip-ai         Skip AI normalisation even if AI_SCRAPER_BASE_URL is set
-//
-// Examples:
-//   npx tsx scripts/scraping/runner.ts --source boligsiden --max 50
-//   npx tsx scripts/scraping/runner.ts --source edc,boliga --max 20
 
+import { randomUUID } from 'node:crypto'
+import { fileURLToPath } from 'node:url'
 import { config } from 'dotenv'
+import { isAIEnabled } from '../../src/shared/lib/ai'
+import { CheckpointStore, type RunTotals } from './checkpoint-store'
+import { normaliseBatch } from './normalise'
+import {
+  incrementalBatchLimit,
+  shouldStopIncremental,
+  type PageCursor,
+  type ScrapeWatermark,
+} from './orchestration'
+import { waitForSourceBudget } from './rate-policy'
+import { parseRunnerArgs, type ParsedRunnerOptions } from './runner-options'
+import { scrapeAirbnb } from './scrapers/airbnb'
+import { scrapeBilbasen } from './scrapers/bilbasen'
+import { scrapeBoliga } from './scrapers/boliga'
+import { scrapeBoligsiden } from './scrapers/boligsiden'
+import { scrapeDba } from './scrapers/dba'
+import { scrapeEdc } from './scrapers/edc'
+import { scrapeFacebook } from './scrapers/facebook'
+import { scrapeFacebookEvents } from './scrapers/facebook-events'
+import { scrapeHomestra } from './scrapers/homestra'
+import { scrapeLinkedIn } from './scrapers/linkedin'
+import { isSourceRunnable } from './source-policy'
+import { saveScrapeResults, printSummary, type NormaliseMeta } from './storage'
+import type { ScrapedSource, ScrapeResult, ScraperConfig } from './types'
+
 config({ path: '.env.development' })
 config()
 
-import { scrapeAirbnb } from './scrapers/airbnb'
-import { scrapeFacebook } from './scrapers/facebook'
-import { scrapeFacebookEvents } from './scrapers/facebook-events'
-import { scrapeLinkedIn } from './scrapers/linkedin'
-import { scrapeEdc } from './scrapers/edc'
-import { scrapeBoligsiden } from './scrapers/boligsiden'
-import { scrapeBoliga } from './scrapers/boliga'
-import { scrapeHomestra } from './scrapers/homestra'
-import { scrapeBilbasen } from './scrapers/bilbasen'
-import { scrapeDba } from './scrapers/dba'
-import { saveScrapeResults, printSummary, type NormaliseMeta } from './storage'
-import { normaliseBatch } from './normalise'
-import { isAIEnabled } from '../../src/shared/lib/ai'
-import type { ScrapedSource, RunnerOptions, ScrapeResult } from './types'
+type ScraperFn = (opts: Partial<ScraperConfig>) => Promise<ScrapeResult>
 
-interface ParsedOptions extends RunnerOptions {
-  skipAI: boolean
-}
-
-type ScraperFn = (opts: { maxItems: number; dryRun: boolean }) => Promise<ScrapeResult>
-
-/**
- * Registry of scrapers we know how to run. Source keys approved in the admin
- * discovery flow that are NOT in this map appear in the UI as
- * "Approved · awaiting scraper" — approving a candidate no longer requires a
- * DB migration, only adding an entry here once a scraper module is written.
- */
 export const SCRAPER_REGISTRY: Record<string, ScraperFn> = {
   airbnb: scrapeAirbnb,
   facebook: scrapeFacebook,
@@ -58,94 +46,188 @@ export const SCRAPER_REGISTRY: Record<string, ScraperFn> = {
   dba: scrapeDba,
 }
 
-const ALL_SOURCES: ScrapedSource[] = Object.keys(SCRAPER_REGISTRY)
+export const RUNNABLE_SOURCES = Object.keys(SCRAPER_REGISTRY).filter(isSourceRunnable)
 
-function parseArgs(): ParsedOptions {
-  const args = process.argv.slice(2)
-  const sourceArg = args.find((a) => a.startsWith('--source'))
-  const maxArg = args.find((a) => a.startsWith('--max'))
-  const dryRun = args.includes('--dry-run')
-  const skipAI = args.includes('--skip-ai')
+function emptyTotals(): RunTotals {
+  return { found: 0, saved: 0, updated: 0, known: 0, errors: 0 }
+}
 
-  const rawSource = sourceArg?.includes('=')
-    ? sourceArg.split('=')[1]
-    : args[args.indexOf('--source') + 1]
-
-  let sources: ScrapedSource[]
-  if (!rawSource || rawSource === 'all') {
-    sources = ALL_SOURCES
-  } else {
-    const parts = rawSource.split(',').map((s) => s.trim())
-    const invalid = parts.filter((s) => !SCRAPER_REGISTRY[s])
-    if (invalid.length > 0) {
-      console.error(`No scraper registered for: ${invalid.join(', ')}. Known: ${ALL_SOURCES.join(', ')}, all`)
-      process.exit(1)
-    }
-    sources = parts
+async function scrapeAndSaveBatch(input: {
+  source: ScrapedSource
+  options: ParsedRunnerOptions
+  cursor: PageCursor
+  store?: CheckpointStore
+}) {
+  const scraper = SCRAPER_REGISTRY[input.source]
+  if (!scraper) throw new Error(`No scraper registered for source "${input.source}"`)
+  let result = await scraper({
+    maxItems: input.options.maxItems,
+    dryRun: input.options.dryRun,
+    startPage: input.cursor.page,
+    flow: input.options.flow,
+  })
+  if (result.errors.length > 0) {
+    throw new Error(result.errors.join('; '))
   }
 
-  const maxItems = maxArg
-    ? parseInt(maxArg.includes('=') ? maxArg.split('=')[1]! : args[args.indexOf('--max') + 1]!, 10)
-    : 100
-
-  return { sources, maxItems: isNaN(maxItems) ? 100 : maxItems, dryRun, skipAI }
+  let normalisedByMap: Map<string, NormaliseMeta> | undefined
+  if (!input.options.dryRun && result.items.length > 0) {
+    const knownIds = input.store
+      ? await input.store.knownSourceIds(input.source, result.items.map((item) => item.sourceId))
+      : new Set<string>()
+    const itemsToNormalise = result.items.filter((item) => !knownIds.has(item.sourceId))
+    const normalised = await normaliseBatch(itemsToNormalise, input.source, {
+      skipAI: input.options.skipAI,
+    })
+    const normalisedById = new Map(normalised.items.map((item) => [item.sourceId, item]))
+    result = {
+      ...result,
+      items: result.items.map((item) => normalisedById.get(item.sourceId) ?? item),
+    }
+    normalisedByMap = normalised.normalisedByMap
+  }
+  const saveResult = await saveScrapeResults(
+    input.source,
+    result.items,
+    input.options.dryRun,
+    normalisedByMap,
+  )
+  printSummary(result, saveResult)
+  return { result, saveResult }
 }
 
-async function runOne(
-  source: ScrapedSource,
-  overrides: { maxItems: number; dryRun: boolean },
-): Promise<ScrapeResult> {
-  const fn = SCRAPER_REGISTRY[source]
-  if (!fn) throw new Error(`No scraper registered for source "${source}"`)
-  return fn(overrides)
+async function runDrySource(source: string, options: ParsedRunnerOptions) {
+  await scrapeAndSaveBatch({ source, options, cursor: { page: 1 } })
 }
 
-async function run() {
-  const options = parseArgs()
+async function runManagedSource(
+  source: string,
+  options: ParsedRunnerOptions,
+  store: CheckpointStore,
+) {
+  const owner = `${process.pid}-${randomUUID()}`
+  const checkpoint = await store.claim(source, options.flow, owner)
+  if (!checkpoint) {
+    console.log(`[runner] ${source}/${options.flow} is not due, paused, exhausted, or already leased`)
+    return
+  }
+  const runId = await store.startRun(checkpoint)
+  const totals = emptyTotals()
+  let cursor = checkpoint.cursor
+  let watermark = checkpoint.watermark
+  let capturedIncrementalWatermark = false
+  let consecutiveKnownItems = checkpoint.consecutiveKnownItems
+  let exhausted = false
+  let stopReason = 'slice_complete'
 
-  console.log('╔══════════════════════════════════════════════════════════╗')
-  console.log('║         GeoLocal — Scraping Runner                      ║')
-  console.log('╚══════════════════════════════════════════════════════════╝')
-  console.log(`  Sources   : ${options.sources.join(', ')}`)
-  console.log(`  Max items : ${options.maxItems} per source`)
-  console.log(`  Dry run   : ${options.dryRun ? 'YES — nothing will be saved' : 'NO — results will be saved to DB'}`)
-  const aiState = options.skipAI
-    ? 'SKIPPED (--skip-ai)'
-    : isAIEnabled()
-      ? 'ENABLED (via AI_BASE_URL)'
-      : 'not configured — rule-based only'
-  console.log(`  AI        : ${aiState}`)
-  console.log()
-
-  for (const source of options.sources) {
-    console.log(`\n▶ Starting ${source} scraper...`)
-    const configOverrides = { maxItems: options.maxItems, dryRun: options.dryRun }
-
-    try {
-      let result = await runOne(source, configOverrides)
-
-      let normalisedByMap: Map<string, NormaliseMeta> | undefined
-      if (!options.dryRun && result.items.length > 0) {
-        console.log(`  → normalising ${result.items.length} items...`)
-        const { items: normalised, normalisedByMap: map } = await normaliseBatch(
-          result.items,
+  try {
+    const maxBatches = options.flow === 'incremental'
+      ? incrementalBatchLimit(
           source,
-          { skipAI: options.skipAI },
+          Number(process.env.SCRAPE_INCREMENTAL_MAX_BATCHES ?? 5),
         )
-        result = { ...result, items: normalised }
-        normalisedByMap = map
+      : 1
+
+    for (let batch = 0; batch < maxBatches; batch++) {
+      const { result, saveResult } = await scrapeAndSaveBatch({ source, options, cursor, store })
+      totals.found += result.items.length
+      totals.saved += saveResult.saved
+      totals.updated += saveResult.updated
+      totals.known += saveResult.skipped
+      totals.errors += result.errors.length + saveResult.errors.length
+      if (saveResult.errors.length) throw new Error(saveResult.errors.join('; '))
+
+      if (options.flow === 'incremental' && !capturedIncrementalWatermark && result.items[0]) {
+        watermark = {
+          sourceId: result.items[0].sourceId,
+          observedAt: result.scrapedAt.toISOString(),
+        } satisfies ScrapeWatermark
+        capturedIncrementalWatermark = true
       }
+      consecutiveKnownItems = saveResult.saved > 0
+        ? 0
+        : consecutiveKnownItems + result.items.length
+      cursor = result.nextCursor ?? { page: cursor.page + 1 }
+      exhausted = result.exhausted === true
 
-      const saveResult = await saveScrapeResults(source, result.items, options.dryRun, normalisedByMap)
-      printSummary(result, saveResult)
-    } catch (err) {
-      console.error(`\n✗ ${source} scraper failed:`, err instanceof Error ? err.message : err)
+      if (exhausted) {
+        stopReason = 'source_exhausted'
+        break
+      }
+      if (
+        options.flow === 'incremental' &&
+        shouldStopIncremental({
+          consecutiveKnownItems,
+          pageSize: options.maxItems,
+          knownPagesThreshold: 2,
+          partitioned: Boolean(cursor.partition),
+        })
+      ) {
+        stopReason = 'known_watermark_overlap'
+        break
+      }
+      if (options.flow === 'backfill') break
+      await waitForSourceBudget(source)
     }
-  }
 
-  console.log('\n✓ All scrapers finished.')
-  console.log('  Review pending items at: /admin/scraping')
-  process.exit(0)
+    const incrementalHours = Number(process.env.SCRAPE_INCREMENTAL_INTERVAL_HOURS ?? 6)
+    const backfillMinutes = Number(process.env.SCRAPE_BACKFILL_INTERVAL_MINUTES ?? 20)
+    const nextRunAt = new Date(
+      Date.now() +
+        (options.flow === 'incremental'
+          ? incrementalHours * 60 * 60_000
+          : backfillMinutes * 60_000),
+    )
+    const persistedCursor = options.flow === 'incremental' ? { page: 1 } : cursor
+    await store.succeed({
+      checkpoint,
+      runId,
+      owner,
+      cursor: persistedCursor,
+      watermark,
+      consecutiveKnownItems: options.flow === 'incremental' ? 0 : consecutiveKnownItems,
+      exhausted,
+      totals,
+      stopReason,
+      nextRunAt,
+    })
+  } catch (error) {
+    await store.fail({ checkpoint, runId, owner, error })
+    throw error
+  }
 }
 
-run()
+export async function runScraping(args = process.argv.slice(2)) {
+  const options = parseRunnerArgs(args, RUNNABLE_SOURCES)
+  console.log(`GeoLocal scraper | flow=${options.flow} | sources=${options.sources.join(',')}`)
+  console.log(`AI normalisation: ${options.skipAI ? 'disabled' : isAIEnabled() ? 'enabled' : 'rules only'}`)
+
+  if (options.dryRun) {
+    for (const source of options.sources) await runDrySource(source, options)
+    return
+  }
+
+  const databaseUrl = process.env.DATABASE_URL
+  if (!databaseUrl) throw new Error('DATABASE_URL is required for managed scraping')
+  const store = new CheckpointStore(databaseUrl)
+  try {
+    await store.reconcileStaleRuns()
+    for (const source of options.sources) {
+      try {
+        await runManagedSource(source, options, store)
+      } catch (error) {
+        console.error(`[runner] ${source}/${options.flow} failed:`, error)
+      }
+    }
+  } finally {
+    await store.close()
+  }
+}
+
+const isDirectRun = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]
+if (isDirectRun) {
+  runScraping().catch((error) => {
+    console.error(error)
+    process.exitCode = 1
+  })
+}
