@@ -8,28 +8,42 @@ export const Route = createFileRoute('/_public')({
 
 /**
  * Pathnames that own their scroll state (split-view / map pages).
- * We do NOT force scroll-to-top on these — they manage their own panes.
+ * These need an internal overflow pane so the map can stay fixed while
+ * the list scrolls. Other routes get a normal page flow so the body
+ * scrolls, framer-motion's whileInView fires correctly, and the user
+ * sees the browser's own scrollbar.
  */
-const SCROLL_EXEMPT = ['/explore']
+const SPLIT_VIEW_ROUTES = ['/explore']
 
 function PublicLayoutWrapper() {
   const mainRef = useRef<HTMLElement>(null)
   const pathname = useRouterState({ select: (s) => s.location.pathname })
+  const isSplitView = SPLIT_VIEW_ROUTES.some((p) => pathname.startsWith(p))
 
   useEffect(() => {
-    if (SCROLL_EXEMPT.some((p) => pathname.startsWith(p))) return
-    // Run on next frame so new route content has mounted and any
-    // browser / router scroll restoration has already fired.
+    if (isSplitView) return
+    // Scroll the body (not the main) on route change.
     const id = requestAnimationFrame(() => {
-      mainRef.current?.scrollTo({ top: 0, left: 0 })
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior })
     })
     return () => cancelAnimationFrame(id)
-  }, [pathname])
+  }, [pathname, isSplitView])
+
+  if (isSplitView) {
+    return (
+      <div className="flex h-screen flex-col">
+        <Header />
+        <main ref={mainRef} className="flex-1 overflow-y-auto">
+          <Outlet />
+        </main>
+      </div>
+    )
+  }
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex min-h-screen flex-col">
       <Header />
-      <main ref={mainRef} className="flex-1 overflow-y-auto">
+      <main className="flex-1">
         <Outlet />
       </main>
     </div>
