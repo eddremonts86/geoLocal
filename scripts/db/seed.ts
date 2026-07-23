@@ -365,7 +365,21 @@ function generateExperience(hood: typeof NEIGHBORHOODS[number]) {
 async function seed() {
   console.log('🌱 Seeding multi-category listings...')
 
-  // Clear v2 tables
+  // Production safety: if NODE_ENV=production and the listings table is
+  // already populated, refuse to truncate. Listings represent user/curated
+  // marketplace content and the scraper pipeline; wiping them on every
+  // deploy would destroy real data. Run this script manually in dev to
+  // reset; in production use scripts/db/seed-prod.mjs (which calls us
+  // only when listings is empty).
+  const [existing] = await db.execute(sql`SELECT count(*)::int AS n FROM listings`)
+  const existingCount = Number(existing?.n ?? 0)
+  if (existingCount > 0 && process.env.NODE_ENV === 'production' && process.env.SEED_FORCE !== 'true') {
+    console.log(`  · listings table already has ${existingCount} rows; skipping (production mode).`)
+    console.log('    Pass SEED_FORCE=true to override, or run scripts/db/seed-prod.mjs.')
+    process.exit(0)
+  }
+
+  // Clear v2 tables (only when seed is actually going to run)
   await db.execute(sql`TRUNCATE listing_features, listing_assets, listing_translations, listing_experiences, listing_services, listing_vehicles, listing_properties, listings CASCADE`)
   console.log('  ✓ Cleared existing v2 data')
 

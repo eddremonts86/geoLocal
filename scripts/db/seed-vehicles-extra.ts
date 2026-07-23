@@ -7,6 +7,7 @@
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { randomUUID } from 'node:crypto'
+import { sql } from 'drizzle-orm'
 import {
   listings,
   listingVehicles,
@@ -384,6 +385,18 @@ const BATCH_SIZE = 500
 async function seed() {
   console.log(`🚗 Adding ${TOTAL} new vehicle listings (all subcategories)…`)
   console.log('   Existing data is preserved.\n')
+
+  // Production safety: if the listings table already has a lot of vehicle
+  // rows (the principal seed in seed.ts populates 5,000 of each category
+  // plus this script adds 5,000 more vehicles), skip on re-runs to avoid
+  // creating duplicate noise. Set SEED_FORCE=true to override.
+  const [existing] = await db.execute(sql`SELECT count(*)::int AS n FROM listings WHERE category = 'vehicle'`)
+  const vehicleCount = Number(existing?.n ?? 0)
+  const EXPECTED_VEHICLES = 10_000 // 5,000 from seed.ts + 5,000 from this script
+  if (vehicleCount >= EXPECTED_VEHICLES && process.env.NODE_ENV === 'production' && process.env.SEED_FORCE !== 'true') {
+    console.log(`  · ${vehicleCount} vehicle listings already present (>= ${EXPECTED_VEHICLES}); skipping.`)
+    process.exit(0)
+  }
 
   let created = 0
 

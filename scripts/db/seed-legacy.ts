@@ -449,6 +449,18 @@ const BATCH_SIZE = 500
 async function seed() {
   console.log(`🌱 Seeding ${TOTAL.toLocaleString()} Copenhagen properties...\n`)
 
+  // Production safety: do not wipe an already-populated `properties` table.
+  // The legacy schema is independent from the v2 `listings` table; the only
+  // safe way to re-seed in production is to drop+recreate manually, never
+  // silently. Set SEED_FORCE=true to override.
+  const [existing] = await db.execute(sql`SELECT count(*)::int AS n FROM properties`)
+  const existingCount = Number(existing?.n ?? 0)
+  if (existingCount > 0 && process.env.NODE_ENV === 'production' && process.env.SEED_FORCE !== 'true') {
+    console.log(`  · properties table already has ${existingCount} rows; skipping (production mode).`)
+    console.log('    Pass SEED_FORCE=true to override.')
+    process.exit(0)
+  }
+
   // Clear existing data
   await db.delete(properties)
   console.log('  🗑️  Cleared existing properties\n')

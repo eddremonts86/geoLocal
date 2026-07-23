@@ -149,7 +149,7 @@ async function main() {
   console.log(`  drizzle/     = ${drizzleDir}`)
 
   // 1. Ensure target database exists
-  run('1/6 create-db', 'pnpm', ['exec', 'tsx', 'scripts/db/create-db.ts'])
+  run('1/7 create-db', 'pnpm', ['exec', 'tsx', 'scripts/db/create-db.ts'])
 
   // 2 + 3. Apply all SQL migrations in order
   console.log('\n── 2/3 apply SQL migrations ──')
@@ -157,19 +157,23 @@ async function main() {
 
   // 4. Bookkeeping for the orchestration migration
   run(
-    '4/6 apply-scraping-orchestration-migration',
+    '4/7 apply-scraping-orchestration-migration',
     'pnpm',
     ['exec', 'tsx', 'scripts/db/apply-scraping-orchestration-migration.ts'],
   )
 
   // 5. Default admin user
-  run('5/6 seed-admin', 'pnpm', ['exec', 'tsx', 'scripts/db/seed-admin.ts'])
+  run('5/7 seed-admin', 'pnpm', ['exec', 'tsx', 'scripts/db/seed-admin.ts'])
 
   // 6. scraping_sources registry — required by the scraper scheduler.
   //    Runs as its own step so that on fresh prod DBs (where 0000_initial
   //    already created scraping_sources empty) the built-in sources still
   //    get registered even if migration 0008 was a no-op.
-  run('6/6 seed-scrape-sources', 'node', ['scripts/db/seed-scrape-sources.mjs'])
+  run('6/7 seed-scrape-sources', 'node', ['scripts/db/seed-scrape-sources.mjs'])
+
+  // 7. Marketplace content (listings, properties, vehicles, etc.) — only
+  //    runs the missing pieces. Safe to invoke on every boot.
+  run('7/7 seed-prod', 'node', ['scripts/db/seed-prod.mjs'])
 
   console.log('\n✅  migrate-prod finished')
 }
