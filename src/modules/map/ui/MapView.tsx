@@ -135,9 +135,20 @@ function updateDraft(map: maplibregl.Map, points: [number, number][]) {
 }
 
 function formatMarkerPrice(price: number) {
+  // Free items (events, free services) — show "FREE" instead of "0",
+  // otherwise the label is indistinguishable from a cluster-count badge.
+  if (!price) return 'FREE'
   if (price >= 1_000_000) return `${(price / 1_000_000).toFixed(1)}M`
   if (price >= 1_000) return `${(price / 1_000).toFixed(0)}K`
   return price.toString()
+}
+
+/** Same as formatMarkerPrice but emits "FREE" for price=0 (for popups). */
+function formatMarkerPriceLabel(price: number, currency: string) {
+  if (!price) return `FREE`
+  if (price >= 1_000_000) return `${(price / 1_000_000).toFixed(1)}M ${currency}`
+  if (price >= 1_000) return `${(price / 1_000).toFixed(0)}K ${currency}`
+  return `${price} ${currency}`
 }
 
 function markersToGeoJSON(markers: MapMarker[]): GeoJSON.FeatureCollection {
@@ -694,7 +705,7 @@ export function MapView({
         .setHTML(
           `<a href="/listing/${m.slug}" class="geo-popup-lite">
             <div class="geo-popup-lite-cat">${m.category}</div>
-            <div class="geo-popup-lite-price">${formatMarkerPrice(m.price)} ${m.currency}</div>
+            <div class="geo-popup-lite-price">${formatMarkerPriceLabel(m.price, m.currency)}</div>
             <div class="geo-popup-lite-cta">View details →</div>
           </a>`,
         )
