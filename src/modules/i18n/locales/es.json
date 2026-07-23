@@ -10,6 +10,16 @@
     "vehicles": "Vehículos",
     "services": "Servicios"
   },
+  "auth": {
+    "signInTitle": "Iniciar sesión",
+    "signInSubtitle": "Introduce tu email y contraseña para continuar.",
+    "email": "Email",
+    "password": "Contraseña",
+    "signInCta": "Iniciar sesión",
+    "signingIn": "Iniciando sesión…",
+    "invalidCredentials": "Credenciales inválidas",
+    "signInFailed": "Error al iniciar sesión. Inténtalo de nuevo."
+  },
   "categories": {
     "properties": "Inmuebles",
     "vehicles": "Vehículos",
@@ -123,7 +133,16 @@
     "year": "Año",
     "fuelType": "Combustible",
     "transmission": "Transmisión",
-    "experience": "Experiencia"
+    "experience": "Experiencia",
+    "experienceType": "Tipo de experiencia",
+    "duration": "Duración",
+    "groupSize": "Tamaño del grupo",
+    "guests": "personas",
+    "min": "Mín",
+    "max": "Máx",
+    "type": "Tipo",
+    "filters": "Filtros",
+    "years": "años"
   },
   "listing": {
     "notFound": "Listado no encontrado",

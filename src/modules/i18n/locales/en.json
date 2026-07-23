@@ -10,6 +10,16 @@
     "vehicles": "Vehicles",
     "services": "Services"
   },
+  "auth": {
+    "signInTitle": "Sign in",
+    "signInSubtitle": "Enter your email and password to continue.",
+    "email": "Email",
+    "password": "Password",
+    "signInCta": "Sign in",
+    "signingIn": "Signing in…",
+    "invalidCredentials": "Invalid credentials",
+    "signInFailed": "Sign in failed. Please try again."
+  },
   "categories": {
     "properties": "Properties",
     "vehicles": "Vehicles",

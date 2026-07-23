@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { signIn } from '@/shared/lib/auth/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,6 +11,7 @@ export const Route = createFileRoute('/sign-in')({
 })
 
 function SignInPage() {
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -23,12 +25,12 @@ function SignInPage() {
     try {
       const result = await signIn.email({ email, password })
       if (result.error) {
-        setError(result.error.message ?? 'Invalid credentials')
+        setError(result.error.message ?? t('auth.invalidCredentials', 'Invalid credentials'))
       } else {
         navigate({ to: '/' })
       }
     } catch {
-      setError('Sign in failed. Please try again.')
+      setError(t('auth.signInFailed', 'Sign in failed. Please try again.'))
     } finally {
       setLoading(false)
     }
@@ -38,14 +40,16 @@ function SignInPage() {
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="w-full max-w-sm space-y-6 px-6">
         <div className="space-y-1">
-          <h1 className="font-display text-2xl font-medium tracking-tight">Sign in</h1>
+          <h1 className="font-display text-2xl font-medium tracking-tight">
+            {t('auth.signInTitle', 'Sign in')}
+          </h1>
           <p className="text-sm" style={{ color: 'var(--ink-3)' }}>
-            Enter your email and password to continue.
+            {t('auth.signInSubtitle', 'Enter your email and password to continue.')}
           </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('auth.email', 'Email')}</Label>
             <Input
               id="email"
               type="email"
@@ -53,10 +57,11 @@ function SignInPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              lang={i18n.language}
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t('auth.password', 'Password')}</Label>
             <Input
               id="password"
               type="password"
@@ -70,7 +75,7 @@ function SignInPage() {
             <p className="text-sm text-destructive">{error}</p>
           )}
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Signing in…' : 'Sign in'}
+            {loading ? t('auth.signingIn', 'Signing in…') : t('auth.signInCta', 'Sign in')}
           </Button>
         </form>
       </div>

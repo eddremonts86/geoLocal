@@ -352,6 +352,7 @@ function generateVehicle(hood: Hood) {
       latitude: lat,
       longitude: lng,
       addressLine1: `${hood.en} ${randInt(1, 200)}`,
+      region: hood.key,
       city: 'Copenhagen',
       country: 'DK',
       featured: Math.random() < 0.04,
