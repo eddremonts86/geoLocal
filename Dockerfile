@@ -58,6 +58,11 @@ COPY drizzle ./drizzle
 COPY drizzle.config.ts ./drizzle.config.ts
 COPY tsconfig.json ./tsconfig.json
 COPY scripts ./scripts
+# `src/` is required by the seed scripts — they import schema definitions
+# (listings, properties, etc.) from src/shared/lib/db/schema. The compiled
+# server bundle already has its own copy under dist/server/, but the seeds
+# run as plain tsx outside the bundle and need the raw source.
+COPY src ./src
 
 EXPOSE 3000
 
