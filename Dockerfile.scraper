@@ -23,9 +23,13 @@ WORKDIR /app
 # Copy manifests first to leverage layer cache
 COPY package.json pnpm-lock.yaml ./
 
-# Install all deps (includes playwright + tsx + drizzle-orm + postgres)
-# --ignore-scripts avoids re-downloading Playwright browsers (already in base image)
-RUN pnpm install --frozen-lockfile --ignore-scripts
+# Install all deps, including devDependencies (dotenv, @playwright/test are
+# imported by scripts/scraping/runner.ts and the per-source scrapers).
+# Without --prod=false, pnpm in Docker defaults to production mode and skips
+# devDeps, which causes "Cannot find package 'dotenv'" on the first tick.
+# --ignore-scripts avoids re-downloading Playwright browsers (already in the
+# base image at /ms-playwright).
+RUN pnpm install --frozen-lockfile --ignore-scripts --prod=false
 
 # ── Source files ──────────────────────────────────────────────────────────────
 # Only copy what the scraper needs — keeps the layer lean.
