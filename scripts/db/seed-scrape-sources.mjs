@@ -35,6 +35,8 @@ const BUILT_INS = [
   { key: 'homestra',        label: 'Homestra',         domain: 'homestra.com',        country: 'DK' },
   { key: 'boligsiden',      label: 'Boligsiden',       domain: 'boligsiden.dk',       country: 'DK' },
   { key: 'boliga',          label: 'Boliga',           domain: 'boliga.dk',           country: 'DK' },
+  { key: 'bilbasen',        label: 'Bilbasen',         domain: 'bilbasen.dk',         country: 'DK' },
+  { key: 'dba',             label: 'DBA',              domain: 'dba.dk',              country: 'DK' },
 ]
 
 const sql = postgres(databaseUrl, { max: 1, prepare: false })
