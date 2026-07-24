@@ -2,6 +2,11 @@ node_modules
 dist
 coverage
 
+# Playwright artifacts
+test-results/
+playwright-report/
+tests/e2e/screenshots/
+
 # Environment files — NEVER commit these
 # Only .env.example and .env.production.example are tracked
 .env
