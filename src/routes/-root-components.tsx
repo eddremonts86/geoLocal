@@ -37,6 +37,13 @@ export function RootDocument({ children }: { children: ReactNode }) {
       </head>
       <body
         className="min-h-screen bg-background font-sans antialiased"
+        // Body content legitimately differs between server (English default)
+        // and client (which may upgrade to the user's stored language in
+        // useEffect). Suppressing hydration warnings on the body element
+        // tells React this is expected — the only mismatch source here is
+        // the i18n text content, which is dynamic by design. Other
+        // hydration mismatches (e.g. attribute or structural) are still
+        // caught because we only suppress on this single element.
         suppressHydrationWarning
       >
         <AppProviders>

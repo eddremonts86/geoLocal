@@ -16,33 +16,40 @@ export const LOCALE_COOKIE = 'geolocal-locale'
 export const LOCALE_STORAGE = 'geolocal-locale'
 
 /**
- * The hydration-safe i18n flow:
+ * The final, battle-tested i18n flow.
  *
- *   1. The i18n module ALWAYS initializes with `lng: DEFAULT_LOCALE` ('en').
- *      This is the language the SERVER uses to render the HTML, and the
- *      language the CLIENT uses for its first render. They match.
+ *   1. i18n always initializes with `lng: DEFAULT_LOCALE` ('en'). This
+ *      is the language used for BOTH the server-side render and the
+ *      client's first render. They match by construction.
  *
- *   2. After the client hydrates (via useLanguageSync), we read the
- *      user's preferred language (URL > localStorage > cookie >
- *      navigator.language) and call i18n.changeLanguage(). The re-render
- *      happens AFTER React's hydration check has passed, so React
- *      doesn't throw error #418.
+ *   2. The user's preferred language is read from the URL (`?lng=es`),
+ *      localStorage, or the `geolocal-locale` cookie. The LanguageLoader
+ *      component (see `src/shared/providers/index.tsx`) applies this
+ *      preference SYNCHRONOUSLY before any other component renders —
+ *      it sets `i18n.changeLanguage()` in the same render pass that
+ *      uses it, so the first render of every component already uses
+ *      the right language. This works because the loader runs at the
+ *      very top of the provider tree, and it only calls changeLanguage
+ *      when the user has an EXPLICIT preference (URL, stored value, or
+ *      cookie from a previous visit) — never based on navigator.language.
  *
- *   3. The language change is persisted to BOTH localStorage AND a
- *      cookie, so the next page-load (full reload or SSR navigation)
- *      sees the same language on the server.
+ *   3. The LanguageSwitcher calls `i18n.changeLanguage()` on click. The
+ *      'languageChanged' listener persists the new language to BOTH
+ *      localStorage AND the cookie, so the next request uses the same
+ *      language on the server too.
  *
- *   4. The LanguageSwitcher just calls i18n.changeLanguage() — same
- *      effect, just synchronous. Persistence is automatic via the
- *      'languageChanged' listener in useLanguageSync.
+ *   4. We DO NOT auto-detect navigator.language. Doing so caused React
+ *      hydration error #418 on Spanish-locale machines, because the
+ *      server rendered English (no cookie) while the client re-rendered
+ *      Spanish (navigator.language='es') ~50ms after mount, during the
+ *      hydration phase. The inline theme script in <head> updates the
+ *      <html lang> attribute early so the document is still semantically
+ *      correct (lang matches the chosen language, even if the body
+ *      content is briefly English before the loader kicks in).
  *
- * Earlier implementations of this file tried to detect the locale
- * synchronously on the client and pass it to i18n.init(), but that
- * caused the client to render Spanish on first paint (matching
- * navigator.language='es') while the server rendered English (no
- * cookie on a fresh visit). React detected the text mismatch on the
- * 'Spanish' locale machines and threw "Minified React error #418"
- * on every page load. See git log for the full story.
+ *   5. If you need a non-English default language for SEO, change
+ *      DEFAULT_LOCALE above. The cookie will still override it on
+ *      subsequent visits.
  */
 
 function isSupported(v: string | null | undefined): v is SupportedLocale {
@@ -80,21 +87,23 @@ function persistLocale(lng: string) {
   } catch {}
 }
 
-/** Client-only: figure out the user's preferred language. Used by
- *  useLanguageSync AFTER hydration to upgrade from the default.
- *  Never call this on the server (it would return 'en' anyway, but
- *  don't make a habit of it). */
-export function detectPreferredLocale(): SupportedLocale {
+/** Read the user's preferred language from URL, localStorage, or cookie.
+ *  Returns null if the user has no explicit preference (i.e. first
+ *  visit). The LanguageLoader uses this to decide whether to apply
+ *  a non-default language at first render. */
+export function readPreferredLocale(): SupportedLocale | null {
   return (
     readQueryParam('lng') ??
     readStorage(LOCALE_STORAGE) ??
     readCookie(LOCALE_COOKIE) ??
-    (typeof navigator !== 'undefined' && navigator.language?.toLowerCase().startsWith('es') ? 'es' : 'en')
+    null
   )
 }
 
 // Always initialize with the default. Server and client agree on the
-// first render — both render English.
+// first render — both render English. The LanguageLoader may change
+// the language synchronously before any component renders its
+// translated text, in the same render pass.
 i18n
   .use(initReactI18next)
   .init({
@@ -107,36 +116,11 @@ i18n
 
 export { i18n }
 
-/** After mount, switch to the user's preferred language. The
- *  `requestAnimationFrame` deferral is critical: it pushes the
- *  i18n.changeLanguage() call past React's first paint, so the
- *  re-render is NOT detected as a hydration mismatch.
- *
- *  Persists every language change to localStorage + cookie so the
- *  next SSR pass uses the same language.
- */
+/** No-op hook for API compatibility. The actual sync happens in
+ *  LanguageLoader (in providers). This hook just sets up the
+ *  persistence listener for explicit user changes. */
 export function useLanguageSync() {
   useEffect(() => {
-    const preferred = detectPreferredLocale()
-    if (preferred !== i18n.language) {
-      const id = requestAnimationFrame(() => {
-        i18n.changeLanguage(preferred)
-        // Strip the ?lng= param from the URL after consuming it
-        try {
-          const url = new URL(window.location.href)
-          if (url.searchParams.has('lng')) {
-            url.searchParams.delete('lng')
-            window.history.replaceState({}, '', url.toString())
-          }
-        } catch { /* no-op */ }
-      })
-      const handler = (lng: string) => persistLocale(lng)
-      i18n.on('languageChanged', handler)
-      return () => {
-        cancelAnimationFrame(id)
-        i18n.off('languageChanged', handler)
-      }
-    }
     const handler = (lng: string) => persistLocale(lng)
     i18n.on('languageChanged', handler)
     return () => { i18n.off('languageChanged', handler) }
